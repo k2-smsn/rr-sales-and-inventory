@@ -29,7 +29,15 @@ public class InventoryService {
         String lower = query.toLowerCase().trim();
         return productDAO.getAll().stream()
             .filter(p -> !p.getStatus().equalsIgnoreCase("unavailable"))
-            .filter(p -> p.getName().toLowerCase().contains(lower))
+            .filter(p -> p.getName().toLowerCase().startsWith(lower))
+            .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
+            .collect(Collectors.toList());
+    }
+
+    public List<Product> getAllAvailable() throws SQLException {
+        return productDAO.getAll().stream()
+            .filter(p -> !p.getStatus().equalsIgnoreCase("unavailable"))
+            .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
             .collect(Collectors.toList());
     }
 }

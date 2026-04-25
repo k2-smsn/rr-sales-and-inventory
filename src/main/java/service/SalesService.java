@@ -8,12 +8,20 @@ package service;
  *
  * @author k2
  */
+import dao.ItemSoldDAO;
+import dao.ProductDAO;
+import dao.TransactionDAO;
+import entity.CartItem;
+import entity.ItemSold;
+import entity.Receipt;
+import entity.Transaction;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import utility.DBConnection;
 
 public class SalesService {
     private static SalesService instance;

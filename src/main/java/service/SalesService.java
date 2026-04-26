@@ -37,45 +37,41 @@ public class SalesService {
     }
 
     public Receipt processTransaction(List<CartItem> cart) throws SQLException {
-        Connection conn = DBConnection.getConnection();
-        conn.setAutoCommit(false);
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                Transaction transaction = new Transaction(0, LocalDate.now(), "completed");
+                int transactionId = transactionDAO.create(transaction, conn);
+                transaction.setId(transactionId);
 
-        try {
-            // 1. Create transaction row
-            Transaction transaction = new Transaction(0, LocalDate.now(), "completed");
-            int transactionId = transactionDAO.create(transaction);
-            transaction.setId(transactionId);
+                List<ItemSold> itemsSold = new ArrayList<>();
+                BigDecimal total = BigDecimal.ZERO;
 
-            // 2. Insert items_sold, decrement stock, increment sales
-            List<ItemSold> itemsSold = new ArrayList<>();
-            BigDecimal total = BigDecimal.ZERO;
+                for (CartItem item : cart) {
+                    BigDecimal subTotal = item.getSubTotal();
+                    total = total.add(subTotal);
 
-            for (CartItem item : cart) {
-                BigDecimal subTotal = item.getSubTotal();
-                total = total.add(subTotal);
+                    ItemSold itemSold = new ItemSold(
+                        0,
+                        transactionId,
+                        item.getProduct().getId(),
+                        item.getQuantity(),
+                        item.getProduct().getPricePerUnit(),
+                        subTotal
+                    );
+                    itemSoldDAO.add(itemSold, conn);
+                    productDAO.decrementStock(item.getProduct().getId(), item.getQuantity(), conn);
+                    productDAO.incrementSales(item.getProduct().getId(), conn);
+                    itemsSold.add(itemSold);
+                }
 
-                ItemSold itemSold = new ItemSold(
-                    0,
-                    transactionId,
-                    item.getProduct().getId(),
-                    item.getQuantity(),
-                    item.getProduct().getPricePerUnit(),
-                    subTotal
-                );
-                itemSoldDAO.add(itemSold);
-                productDAO.decrementStock(item.getProduct().getId(), item.getQuantity());
-                productDAO.incrementSales(item.getProduct().getId());
-                itemsSold.add(itemSold);
+                conn.commit();
+                return new Receipt(transaction, itemsSold, total);
+
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
-
-            conn.commit();
-            return new Receipt(transaction, itemsSold, total);
-
-        } catch (SQLException e) {
-            conn.rollback();
-            throw e;
-        } finally {
-            conn.setAutoCommit(true);
         }
     }
 }

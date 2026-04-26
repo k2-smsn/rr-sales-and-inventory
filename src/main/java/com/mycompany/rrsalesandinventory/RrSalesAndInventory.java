@@ -13,6 +13,7 @@ import utility.ThemeManager;
 import utility.UserSession;
 import view.InventoryPanel;
 import view.NewTransactionPanel;
+import view.TransactionsPanel;
 
 /**
  *
@@ -39,7 +40,7 @@ public class RrSalesAndInventory {
             frame.setContentPane(contentPane);
 
             // ── swap this line to test different panels ──
-            navigateTo(new InventoryPanel());
+            navigateTo(new TransactionsPanel());
             // navigateTo(new DashboardPanel());
             // navigateTo(new LoginPanel());
 

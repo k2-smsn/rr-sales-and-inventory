@@ -36,29 +36,33 @@ public class TransactionDAO {
     public List<Transaction> getByDateRange(LocalDate from, LocalDate to) throws SQLException {
         List<Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE created_at BETWEEN ? AND ? ORDER BY created_at DESC";
-        try (PreparedStatement stmt = DBConnection.getConnection().prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(from));
             stmt.setDate(2, Date.valueOf(to));
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) transactions.add(mapRow(rs));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) transactions.add(mapRow(rs));
+            }
         }
         return transactions;
     }
 
-    public int create(Transaction transaction) throws SQLException {
+    public int create(Transaction transaction, Connection conn) throws SQLException {
         String sql = "INSERT INTO transactions (created_at, status) VALUES (?, ?) RETURNING id";
-        try (PreparedStatement stmt = DBConnection.getConnection().prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(transaction.getCreatedAt()));
             stmt.setString(2, transaction.getStatus());
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) return rs.getInt("id");
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt("id");
+            }
         }
         throw new SQLException("Failed to create transaction, no ID returned.");
     }
 
     public void updateStatus(int transactionId, String status) throws SQLException {
         String sql = "UPDATE transactions SET status = ? WHERE id = ?";
-        try (PreparedStatement stmt = DBConnection.getConnection().prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, status);
             stmt.setInt(2, transactionId);
             stmt.executeUpdate();

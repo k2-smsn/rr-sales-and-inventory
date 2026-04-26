@@ -14,18 +14,13 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBConnection {
-    private static Connection connection;
-
     private DBConnection() {}
 
     public static Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(
-                AppConfig.getDbUrl(),
-                AppConfig.getDbUser(),
-                AppConfig.getDbPassword()
-            );
-        }
-        return connection;
+        return DriverManager.getConnection(
+            AppConfig.getDbUrl(),
+            AppConfig.getDbUser(),
+            AppConfig.getDbPassword()
+        );
     }
 }

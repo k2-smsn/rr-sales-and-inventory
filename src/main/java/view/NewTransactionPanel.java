@@ -32,7 +32,7 @@ public class NewTransactionPanel extends JPanel {
 
     private final List<CartItem> cart = new ArrayList<>();
     private List<Product> allProducts = new ArrayList<>();
-    private List<Product> searchResults = new ArrayList<>();
+    private final List<Product> searchResults = new ArrayList<>();
 
     // — Search section
     private JTextField searchField;
@@ -42,7 +42,7 @@ public class NewTransactionPanel extends JPanel {
     private JPanel cartPanel;
     private JLabel totalLabel;
 
-     public NewTransactionPanel(MainPanel mainPanel) {
+    public NewTransactionPanel(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
         setLayout(new BorderLayout(0, 0));
         setBackground(ThemeManager.getBg());
@@ -53,6 +53,8 @@ public class NewTransactionPanel extends JPanel {
         add(buildHeader(), BorderLayout.NORTH);
         add(buildBody(), BorderLayout.CENTER);
         add(buildFooter(), BorderLayout.SOUTH);
+
+        mainPanel.hideSidebar();
     }
 
     // ─────────────────────────────────────────
@@ -574,6 +576,7 @@ public class NewTransactionPanel extends JPanel {
         cart.clear();
         updateCart();
         searchField.setText("");
+        mainPanel.showSidebar();
         mainPanel.showPanel("dashboard");
     }
     

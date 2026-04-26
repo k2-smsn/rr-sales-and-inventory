@@ -16,6 +16,7 @@ public class MainPanel extends JPanel {
 
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel contentPanel = new JPanel(cardLayout);
+    private SidebarPanel sidebar;
 
     private DashboardPanel dashboardPanel;
     private InventoryPanel inventoryPanel;
@@ -26,19 +27,19 @@ public class MainPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(ThemeManager.getBg());
 
+        // create sidebar FIRST before any panels
+        sidebar = new SidebarPanel(this);
+
         dashboardPanel    = new DashboardPanel(this);
         inventoryPanel    = new InventoryPanel();
         transactionsPanel = new TransactionsPanel();
         reportsPanel      = new ReportsPanel();
 
         contentPanel.setBackground(ThemeManager.getBg());
-        contentPanel.add(dashboardPanel,        "dashboard");
-        contentPanel.add(inventoryPanel,        "inventory");
-        contentPanel.add(transactionsPanel,     "transactions");
-        contentPanel.add(reportsPanel,          "reports");
-        contentPanel.add(new NewTransactionPanel(this), "newTransaction");
-
-        SidebarPanel sidebar = new SidebarPanel(this);
+        contentPanel.add(dashboardPanel,    "dashboard");
+        contentPanel.add(inventoryPanel,    "inventory");
+        contentPanel.add(transactionsPanel, "transactions");
+        contentPanel.add(reportsPanel,      "reports");
 
         add(sidebar, BorderLayout.WEST);
         add(contentPanel, BorderLayout.CENTER);
@@ -47,7 +48,22 @@ public class MainPanel extends JPanel {
     }
 
     public void showPanel(String name) {
+        if (name.equals("newTransaction")) {
+            contentPanel.add(new NewTransactionPanel(this), "newTransaction");
+        }
         cardLayout.show(contentPanel, name);
+    }
+
+    public void hideSidebar() {
+        sidebar.setVisible(false);
+        revalidate();
+        repaint();
+    }
+
+    public void showSidebar() {
+        sidebar.setVisible(true);
+        revalidate();
+        repaint();
     }
 
     public void applyTheme() {

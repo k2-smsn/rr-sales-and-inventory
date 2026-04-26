@@ -31,12 +31,12 @@ public class ItemSoldDAO {
             rs.getInt("product_id"),
             rs.getBigDecimal("quantity"),
             rs.getBigDecimal("price_per_unit"),
-            rs.getBigDecimal("sub_total")
+            rs.getBigDecimal("subtotal")  // was "sub_total"
         );
     }
 
     public void add(ItemSold item, Connection conn) throws SQLException {
-        String sql = "INSERT INTO items_sold (transaction_id, product_id, quantity, price_per_unit, sub_total) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO items_sold (transaction_id, product_id, quantity, price_per_unit, subtotal) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, item.getTransactionId());
             stmt.setInt(2, item.getProductId());

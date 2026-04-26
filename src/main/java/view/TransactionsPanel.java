@@ -207,119 +207,117 @@ public class TransactionsPanel extends JPanel {
     }
 
     private JPanel buildTransactionCard(Transaction transaction) {
-        System.out.println("Building card for transaction #" + transaction.getId()); //test
-        
+        JPanel card = new JPanel(new BorderLayout(0, 0));
+        card.setBackground(ThemeManager.getSurface());
+        card.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(ThemeManager.getBorder(), 1, true),
+            UIUtils.paddingBorder(12, 12, 12, 12)
+        ));
+        card.setPreferredSize(new Dimension(0, 280));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
+
+        // — top: id, date, status
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(ThemeManager.getSurface());
+
+        JLabel idLabel = UIUtils.createLabel(
+            "Transaction #" + transaction.getId(),
+            ThemeManager.FONT_BOLD,
+            ThemeManager.getText()
+        );
+        JLabel dateLabel = UIUtils.createLabel(
+            transaction.getCreatedAt().toString(),
+            ThemeManager.FONT_SMALL,
+            ThemeManager.getSubtext()
+        );
+        JLabel statusLabel = UIUtils.createLabel(
+            transaction.getStatus().toUpperCase(),
+            ThemeManager.FONT_SMALL,
+            transaction.getStatus().equalsIgnoreCase("void") ? ThemeManager.DANGER : ThemeManager.SUCCESS
+        );
+        statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        JPanel idDatePanel = new JPanel(new GridLayout(2, 1));
+        idDatePanel.setBackground(ThemeManager.getSurface());
+        idDatePanel.add(idLabel);
+        idDatePanel.add(dateLabel);
+
+        topBar.add(idDatePanel, BorderLayout.WEST);
+        topBar.add(statusLabel, BorderLayout.EAST);
+
+        // — middle: receipt items
+        JPanel receiptPanel = new JPanel();
+        receiptPanel.setLayout(new BoxLayout(receiptPanel, BoxLayout.Y_AXIS));
+        receiptPanel.setBackground(ThemeManager.getSurface());
+
         try {
-            // outer card — fixed size, styled
-            JPanel card = new JPanel(new BorderLayout(0, 0));
-            card.setBackground(ThemeManager.getSurface());
-            card.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(ThemeManager.getBorder(), 1, true),
-                UIUtils.paddingBorder(12, 12, 12, 12)
-            ));
-            card.setPreferredSize(new Dimension(0, 280));
-            card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
+            List<ItemSold> items = transactionService.getItemsByTransactionId(transaction.getId());
+            double total = 0;
 
-            // — top: id, date, status
-            JPanel topBar = new JPanel(new BorderLayout());
-            topBar.setBackground(ThemeManager.getSurface());
+            receiptPanel.add(buildReceiptRowHeader());
+            receiptPanel.add(UIUtils.createSeparator());
 
-            JLabel idLabel = UIUtils.createLabel(
-                "Transaction #" + transaction.getId(),
+            for (ItemSold item : items) {
+                Product product = transactionService.getProductById(item.getProductId());
+                String productName = product != null ? product.getName() : "Unknown Product";
+                receiptPanel.add(buildReceiptRow(productName, item));
+                total += item.getSubTotal().doubleValue();
+            }
+
+            receiptPanel.add(UIUtils.createSeparator());
+
+            JPanel totalRow = new JPanel(new BorderLayout());
+            totalRow.setBackground(ThemeManager.getSurface());
+            totalRow.setBorder(UIUtils.paddingBorder(6, 4, 2, 4));
+            JLabel totalLabel = UIUtils.createLabel(
+                String.format("Total: ₱%,.2f", total),
                 ThemeManager.FONT_BOLD,
                 ThemeManager.getText()
             );
-            JLabel dateLabel = UIUtils.createLabel(
-                transaction.getCreatedAt().toString(),
+            totalLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+            totalRow.add(totalLabel, BorderLayout.EAST);
+            receiptPanel.add(totalRow);
+
+        } catch (SQLException e) {
+            receiptPanel.add(UIUtils.createLabel(
+                "Failed to load items.",
                 ThemeManager.FONT_SMALL,
-                ThemeManager.getSubtext()
-            );
-            JLabel statusLabel = UIUtils.createLabel(
-                transaction.getStatus().toUpperCase(),
-                ThemeManager.FONT_SMALL,
-                transaction.getStatus().equalsIgnoreCase("void") ? ThemeManager.DANGER : ThemeManager.SUCCESS
-            );
-            statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-
-            JPanel idDatePanel = new JPanel(new GridLayout(2, 1));
-            idDatePanel.setBackground(ThemeManager.getSurface());
-            idDatePanel.add(idLabel);
-            idDatePanel.add(dateLabel);
-
-            topBar.add(idDatePanel, BorderLayout.WEST);
-            topBar.add(statusLabel, BorderLayout.EAST);
-
-            // — middle: receipt items in a scroll pane
-            JPanel receiptPanel = new JPanel();
-            receiptPanel.setLayout(new BoxLayout(receiptPanel, BoxLayout.Y_AXIS));
-            receiptPanel.setBackground(ThemeManager.getSurface());
-
-            // load items for this transaction
-            System.out.println("About to fetch items..."); //test
-            try {
-                List<ItemSold> items = transactionService.getItemsByTransactionId(transaction.getId());
-                System.out.println("Transaction #" + transaction.getId() + " — items count: " + items.size()); //test
-                double total = 0;
-
-                // column header
-                JPanel colHeader = buildReceiptRowHeader();
-                receiptPanel.add(colHeader);
-                receiptPanel.add(UIUtils.createSeparator());
-
-                for (ItemSold item : items) {
-                    Product product = transactionService.getProductById(item.getProductId());
-                    System.out.println("Item: " + item.getProductId() + " — product: " + (product != null ? product.getName() : "NULL")); //test
-                    String productName = product != null ? product.getName() : "Unknown Product";
-                    receiptPanel.add(buildReceiptRow(productName, item));
-                    total += item.getSubTotal().doubleValue();
-                }
-
-                receiptPanel.add(UIUtils.createSeparator());
-
-                // total row
-                JPanel totalRow = new JPanel(new BorderLayout());
-                totalRow.setBackground(ThemeManager.getSurface());
-                totalRow.setBorder(UIUtils.paddingBorder(6, 4, 2, 4));
-                JLabel totalLabel = UIUtils.createLabel(
-                    String.format("Total: ₱%,.2f", total),
-                    ThemeManager.FONT_BOLD,
-                    ThemeManager.getText()
-                );
-                totalLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-                totalRow.add(totalLabel, BorderLayout.EAST);
-                receiptPanel.add(totalRow);
-
-            } catch (SQLException e) {
-                receiptPanel.add(UIUtils.createLabel("Failed to load items.", ThemeManager.FONT_SMALL, ThemeManager.DANGER));
-            }
-
-            JScrollPane receiptScroll = new JScrollPane(receiptPanel);
-            receiptScroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, ThemeManager.getBorder()));
-            receiptScroll.getViewport().setBackground(ThemeManager.getSurface());
-            receiptScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-            receiptScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-            // — bottom: cancel button (admin only)
-            JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
-            bottomBar.setBackground(ThemeManager.getSurface());
-
-            if (UserSession.getInstance().isAdmin()
-                    && transaction.getStatus().equalsIgnoreCase("completed")) {
-                JButton voidBtn = UIUtils.createDangerButton("Cancel Transaction");
-                voidBtn.addActionListener(e -> onVoidTransaction(transaction));
-                bottomBar.add(voidBtn);
-            }
-
-            card.add(topBar, BorderLayout.NORTH);
-            card.add(receiptScroll, BorderLayout.CENTER);
-            card.add(bottomBar, BorderLayout.SOUTH);
-
-            return card;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new JPanel(); // fallback
+                ThemeManager.DANGER
+            ));
         }
-        
+
+        JScrollPane receiptScroll = new JScrollPane(receiptPanel);
+        receiptScroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, ThemeManager.getBorder()));
+        receiptScroll.getViewport().setBackground(ThemeManager.getSurface());
+        receiptScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        receiptScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // — bottom: void button
+        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
+        bottomBar.setBackground(ThemeManager.getSurface());
+
+        if (transaction.getStatus().equalsIgnoreCase("active")) {
+            JButton voidBtn = UIUtils.createDangerButton("Cancel Transaction");
+            voidBtn.addActionListener(e -> {
+                if (!UserSession.getInstance().isAdmin()) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "This action requires admin access.",
+                        "Access Denied",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                    return;
+                }
+                onVoidTransaction(transaction);
+            });
+            bottomBar.add(voidBtn);
+        }
+
+        card.add(topBar, BorderLayout.NORTH);
+        card.add(receiptScroll, BorderLayout.CENTER);
+        card.add(bottomBar, BorderLayout.SOUTH);
+
+        return card;
     }
 
     private JPanel buildReceiptRowHeader() {

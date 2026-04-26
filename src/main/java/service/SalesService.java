@@ -40,7 +40,7 @@ public class SalesService {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Transaction transaction = new Transaction(0, LocalDate.now(), "completed");
+                Transaction transaction = new Transaction(0, LocalDate.now(), "active");
                 int transactionId = transactionDAO.create(transaction, conn);
                 transaction.setId(transactionId);
 

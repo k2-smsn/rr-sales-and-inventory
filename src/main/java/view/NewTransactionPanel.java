@@ -28,8 +28,10 @@ public class NewTransactionPanel extends JPanel {
 
     private final InventoryService inventoryService = InventoryService.getInstance();
     private final SalesService salesService = SalesService.getInstance();
+    private final MainPanel mainPanel;
 
     private final List<CartItem> cart = new ArrayList<>();
+    private List<Product> allProducts = new ArrayList<>();
     private List<Product> searchResults = new ArrayList<>();
 
     // — Search section
@@ -40,10 +42,13 @@ public class NewTransactionPanel extends JPanel {
     private JPanel cartPanel;
     private JLabel totalLabel;
 
-    public NewTransactionPanel() {
+     public NewTransactionPanel(MainPanel mainPanel) {
+        this.mainPanel = mainPanel;
         setLayout(new BorderLayout(0, 0));
         setBackground(ThemeManager.getBg());
         setBorder(UIUtils.paddingBorder(24, 24, 24, 24));
+
+        loadProducts();
 
         add(buildHeader(), BorderLayout.NORTH);
         add(buildBody(), BorderLayout.CENTER);
@@ -176,25 +181,22 @@ public class NewTransactionPanel extends JPanel {
     // SEARCH LOGIC
     // ─────────────────────────────────────────
     private void onSearch() {
-        String query = searchField.getText().trim();
-        try {
-            searchResults = inventoryService.searchProducts(query);
-        } catch (SQLException e) {
-            searchResults = new ArrayList<>();
-            showError("Failed to load products: " + e.getMessage());
-        }
-        renderSearchResults();
+        String query = searchField.getText().trim().toLowerCase();
+        List<Product> filtered = allProducts.stream()
+            .filter(p -> p.getName().toLowerCase().startsWith(query))
+            .collect(java.util.stream.Collectors.toList());
+        renderSearchResults(filtered);
     }
 
-    private void renderSearchResults() {
+    private void renderSearchResults(List<Product> products) {
         searchResultsPanel.removeAll();
 
-        if (searchResults.isEmpty()) {
+        if (products.isEmpty()) {
             JLabel empty = UIUtils.createLabel("No products found.", ThemeManager.FONT_REGULAR, ThemeManager.getSubtext());
             empty.setBorder(UIUtils.paddingBorder(12, 12, 12, 12));
             searchResultsPanel.add(empty);
         } else {
-            for (Product product : searchResults) {
+            for (Product product : products) {
                 searchResultsPanel.add(buildSearchResultRow(product));
                 searchResultsPanel.add(UIUtils.createSeparator());
             }
@@ -203,7 +205,7 @@ public class NewTransactionPanel extends JPanel {
         searchResultsPanel.revalidate();
         searchResultsPanel.repaint();
     }
-
+    
     private JPanel buildSearchResultRow(Product product) {
         JPanel row = new JPanel(new BorderLayout(10, 0));
         row.setBackground(ThemeManager.getSurface());
@@ -237,6 +239,14 @@ public class NewTransactionPanel extends JPanel {
         row.add(right, BorderLayout.EAST);
 
         return row;
+    }
+    
+    private void loadProducts() {
+        try {
+            allProducts = inventoryService.getAllAvailable();
+        } catch (SQLException e) {
+            showError("Failed to load products: " + e.getMessage());
+        }
     }
     
     // ─────────────────────────────────────────
@@ -414,8 +424,12 @@ public class NewTransactionPanel extends JPanel {
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         totalLabel.setText("Total: ₱" + String.format("%,.2f", total));
 
-        // refresh search results to reflect updated stock awareness
-        renderSearchResults();
+        // re-filter using current search query and rerender
+        String query = searchField.getText().trim().toLowerCase();
+        List<Product> filtered = allProducts.stream()
+            .filter(p -> p.getName().toLowerCase().startsWith(query))
+            .collect(java.util.stream.Collectors.toList());
+        renderSearchResults(filtered);
 
         cartPanel.revalidate();
         cartPanel.repaint();
@@ -557,14 +571,10 @@ public class NewTransactionPanel extends JPanel {
     }
 
     private void navigateToDashboard() {
-        // replace this panel with dashboard in the parent container
-        JPanel parent = (JPanel) getParent();
-        if (parent != null) {
-            parent.removeAll();
-            //parent.add(new DashboardPanel());
-            parent.revalidate();
-            parent.repaint();
-        }
+        cart.clear();
+        updateCart();
+        searchField.setText("");
+        mainPanel.showPanel("dashboard");
     }
     
 }    

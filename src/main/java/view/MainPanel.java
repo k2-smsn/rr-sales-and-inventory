@@ -32,10 +32,11 @@ public class MainPanel extends JPanel {
         reportsPanel      = new ReportsPanel();
 
         contentPanel.setBackground(ThemeManager.getBg());
-        contentPanel.add(dashboardPanel,    "dashboard");
-        contentPanel.add(inventoryPanel,    "inventory");
-        contentPanel.add(transactionsPanel, "transactions");
-        contentPanel.add(reportsPanel,      "reports");
+        contentPanel.add(dashboardPanel,        "dashboard");
+        contentPanel.add(inventoryPanel,        "inventory");
+        contentPanel.add(transactionsPanel,     "transactions");
+        contentPanel.add(reportsPanel,          "reports");
+        contentPanel.add(new NewTransactionPanel(this), "newTransaction");
 
         SidebarPanel sidebar = new SidebarPanel(this);
 

@@ -11,11 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import utility.ThemeManager;
 import utility.UserSession;
-import view.InventoryPanel;
-import view.NewTransactionPanel;
-import view.ReportsPanel;
-import view.TransactionsPanel;
-
+import view.MainPanel;
 /**
  *
  * @author k2
@@ -41,7 +37,7 @@ public class Main {
             frame.setContentPane(contentPane);
 
             // ── swap this line to test different panels ──
-            navigateTo(new ReportsPanel());
+            navigateTo(new MainPanel());
             // navigateTo(new DashboardPanel());
             // navigateTo(new LoginPanel());
 

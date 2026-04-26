@@ -10,6 +10,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import utility.ThemeManager;
+import utility.UserSession;
+import view.InventoryPanel;
 import view.NewTransactionPanel;
 
 /**
@@ -23,6 +25,9 @@ public class RrSalesAndInventory {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
+            // simulate admin login
+            UserSession.getInstance().login("admin");
+            
             frame = new JFrame("Animal Supply Shop");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1200, 750);
@@ -34,7 +39,7 @@ public class RrSalesAndInventory {
             frame.setContentPane(contentPane);
 
             // ── swap this line to test different panels ──
-            navigateTo(new NewTransactionPanel());
+            navigateTo(new InventoryPanel());
             // navigateTo(new DashboardPanel());
             // navigateTo(new LoginPanel());
 

@@ -76,4 +76,12 @@ public class InventoryService {
     public void addProduct(Product product) throws SQLException {
         productDAO.add(product);
     }
+    
+    public List<Product> getStockAlerts() throws SQLException {
+        return productDAO.getAll().stream()
+            .filter(p -> !p.getStatus().equalsIgnoreCase("unavailable"))
+            .filter(p -> p.getStockQuantity().compareTo(BigDecimal.valueOf(7)) <= 0)
+            .sorted((a, b) -> a.getStockQuantity().compareTo(b.getStockQuantity()))
+            .collect(Collectors.toList());
+    }
 }

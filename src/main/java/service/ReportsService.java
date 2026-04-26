@@ -12,6 +12,7 @@ import dao.ReportsDAO;
 import entity.SalesSummaryData;
 import entity.SegmentData;
 import entity.TopProductData;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
@@ -25,6 +26,10 @@ public class ReportsService {
     public static ReportsService getInstance() {
         if (instance == null) instance = new ReportsService();
         return instance;
+    }
+    
+    public BigDecimal getGrossIncome(LocalDate from, LocalDate to) throws SQLException {
+        return reportsDAO.getGrossIncome(from, to);
     }
 
     public SalesSummaryData getSalesSummary(LocalDate from, LocalDate to) throws SQLException {

@@ -123,4 +123,23 @@ public class ReportsDAO {
         }
         return results;
     }
+    
+    public BigDecimal getGrossIncome(LocalDate from, LocalDate to) throws SQLException {
+        String sql = """
+            SELECT COALESCE(SUM(i.subtotal), 0) AS total
+            FROM items_sold i
+            JOIN transactions t ON t.id = i.transaction_id
+            WHERE t.created_at BETWEEN ? AND ?
+            AND t.status = 'active'
+        """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDate(1, Date.valueOf(from));
+            stmt.setDate(2, Date.valueOf(to));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getBigDecimal("total");
+            }
+        }
+        return BigDecimal.ZERO;
+    }
 }

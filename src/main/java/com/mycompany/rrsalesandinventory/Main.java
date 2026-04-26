@@ -20,7 +20,7 @@ import view.TransactionsPanel;
  *
  * @author k2
  */
-public class RrSalesAndInventory {
+public class Main {
 
     private static JFrame frame;
     private static JPanel contentPane;

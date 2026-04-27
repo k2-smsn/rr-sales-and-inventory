@@ -36,6 +36,15 @@ public class ReportsPanel extends JPanel {
     private JButton exportBtn;
     private String currentReportType = null;
 
+    private JPanel headerPanel;
+    private JPanel dateControlsPanel;
+    private JPanel reportBtnsPanel;
+    private JPanel bodyPanel;
+    private JPanel footerPanel;
+    private JLabel titleLabel;
+    private JLabel fromLabel;
+    private JLabel toLabel;
+
     public ReportsPanel() {
         setLayout(new BorderLayout(0, 0));
         setBackground(ThemeManager.getBg());
@@ -50,27 +59,23 @@ public class ReportsPanel extends JPanel {
     // HEADER
     // ─────────────────────────────────────────
     private JPanel buildHeader() {
-        JPanel header = new JPanel(new BorderLayout(0, 12));
-        header.setBackground(ThemeManager.getBg());
-        header.setBorder(UIUtils.paddingBorder(0, 0, 16, 0));
+        headerPanel = new JPanel(new BorderLayout(0, 12));
+        headerPanel.setBackground(ThemeManager.getBg());
+        headerPanel.setBorder(UIUtils.paddingBorder(0, 0, 16, 0));
 
-        JLabel title = UIUtils.createLabel("Reports", ThemeManager.FONT_HEADING, ThemeManager.getText());
+        titleLabel = UIUtils.createLabel("Reports", ThemeManager.FONT_HEADING, ThemeManager.getText());
 
-        // date controls
-        JPanel dateControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        dateControls.setBackground(ThemeManager.getBg());
+        dateControlsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        dateControlsPanel.setBackground(ThemeManager.getBg());
 
         SpinnerDateModel fromModel = new SpinnerDateModel();
-        SpinnerDateModel toModel = new SpinnerDateModel();
+        SpinnerDateModel toModel   = new SpinnerDateModel();
 
         fromSpinner = new JSpinner(fromModel);
-        toSpinner = new JSpinner(toModel);
+        toSpinner   = new JSpinner(toModel);
 
-        JSpinner.DateEditor fromEditor = new JSpinner.DateEditor(fromSpinner, "MM/dd/yyyy");
-        JSpinner.DateEditor toEditor = new JSpinner.DateEditor(toSpinner, "MM/dd/yyyy");
-
-        fromSpinner.setEditor(fromEditor);
-        toSpinner.setEditor(toEditor);
+        fromSpinner.setEditor(new JSpinner.DateEditor(fromSpinner, "MM/dd/yyyy"));
+        toSpinner.setEditor(new JSpinner.DateEditor(toSpinner, "MM/dd/yyyy"));
         fromSpinner.setPreferredSize(new Dimension(130, 34));
         toSpinner.setPreferredSize(new Dimension(130, 34));
 
@@ -79,46 +84,48 @@ public class ReportsPanel extends JPanel {
         JButton monthBtn = UIUtils.createNeutralButton("This Month");
 
         todayBtn.addActionListener(e -> setToday());
-        weekBtn.addActionListener(e -> setThisWeek());
+        weekBtn.addActionListener(e  -> setThisWeek());
         monthBtn.addActionListener(e -> setThisMonth());
 
-        dateControls.add(UIUtils.createLabel("From:", ThemeManager.FONT_REGULAR, ThemeManager.getText()));
-        dateControls.add(fromSpinner);
-        dateControls.add(UIUtils.createLabel("To:", ThemeManager.FONT_REGULAR, ThemeManager.getText()));
-        dateControls.add(toSpinner);
-        dateControls.add(todayBtn);
-        dateControls.add(weekBtn);
-        dateControls.add(monthBtn);
+        fromLabel = UIUtils.createLabel("From:", ThemeManager.FONT_REGULAR, ThemeManager.getText());
+        toLabel   = UIUtils.createLabel("To:", ThemeManager.FONT_REGULAR, ThemeManager.getText());
 
-        // report type buttons
-        JPanel reportBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        reportBtns.setBackground(ThemeManager.getBg());
+        dateControlsPanel.add(fromLabel);
+        dateControlsPanel.add(fromSpinner);
+        dateControlsPanel.add(toLabel);
+        dateControlsPanel.add(toSpinner);
+        dateControlsPanel.add(todayBtn);
+        dateControlsPanel.add(weekBtn);
+        dateControlsPanel.add(monthBtn);
 
-        JButton summaryBtn   = UIUtils.createAccentButton("Sales Summary");
-        JButton topBtn       = UIUtils.createAccentButton("Top Selling Products");
-        JButton segmentBtn   = UIUtils.createAccentButton("Category & Segment");
+        reportBtnsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        reportBtnsPanel.setBackground(ThemeManager.getBg());
+
+        JButton summaryBtn = UIUtils.createAccentButton("Sales Summary");
+        JButton topBtn     = UIUtils.createAccentButton("Top Selling Products");
+        JButton segmentBtn = UIUtils.createAccentButton("Category & Segment");
 
         summaryBtn.addActionListener(e -> generateReport("summary"));
-        topBtn.addActionListener(e -> generateReport("top_products"));
+        topBtn.addActionListener(e     -> generateReport("top_products"));
         segmentBtn.addActionListener(e -> generateReport("segment"));
 
-        reportBtns.add(summaryBtn);
-        reportBtns.add(topBtn);
-        reportBtns.add(segmentBtn);
+        reportBtnsPanel.add(summaryBtn);
+        reportBtnsPanel.add(topBtn);
+        reportBtnsPanel.add(segmentBtn);
 
-        header.add(title, BorderLayout.NORTH);
-        header.add(dateControls, BorderLayout.CENTER);
-        header.add(reportBtns, BorderLayout.SOUTH);
+        headerPanel.add(titleLabel, BorderLayout.NORTH);
+        headerPanel.add(dateControlsPanel, BorderLayout.CENTER);
+        headerPanel.add(reportBtnsPanel, BorderLayout.SOUTH);
 
-        return header;
+        return headerPanel;
     }
 
     // ─────────────────────────────────────────
     // BODY
     // ─────────────────────────────────────────
     private JPanel buildBody() {
-        JPanel body = new JPanel(new BorderLayout());
-        body.setBackground(ThemeManager.getBg());
+        bodyPanel = new JPanel(new BorderLayout());
+        bodyPanel.setBackground(ThemeManager.getBg());
 
         reportPanel = new JPanel(new BorderLayout());
         reportPanel.setBackground(ThemeManager.getSurface());
@@ -126,30 +133,29 @@ public class ReportsPanel extends JPanel {
 
         JLabel placeholder = UIUtils.createLabel(
             "Select a report type to generate.",
-            ThemeManager.FONT_REGULAR,
-            ThemeManager.getSubtext()
+            ThemeManager.FONT_REGULAR, ThemeManager.getSubtext()
         );
         placeholder.setHorizontalAlignment(SwingConstants.CENTER);
         reportPanel.add(placeholder, BorderLayout.CENTER);
 
-        body.add(reportPanel, BorderLayout.CENTER);
-        return body;
+        bodyPanel.add(reportPanel, BorderLayout.CENTER);
+        return bodyPanel;
     }
 
     // ─────────────────────────────────────────
     // FOOTER
     // ─────────────────────────────────────────
     private JPanel buildFooter() {
-        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        footer.setBackground(ThemeManager.getBg());
-        footer.setBorder(UIUtils.paddingBorder(12, 0, 0, 0));
+        footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        footerPanel.setBackground(ThemeManager.getBg());
+        footerPanel.setBorder(UIUtils.paddingBorder(12, 0, 0, 0));
 
         exportBtn = UIUtils.createAccentButton("Export to PDF");
         exportBtn.setVisible(false);
         exportBtn.addActionListener(e -> exportToPdf());
 
-        footer.add(exportBtn);
-        return footer;
+        footerPanel.add(exportBtn);
+        return footerPanel;
     }
 
     // ─────────────────────────────────────────
@@ -178,13 +184,12 @@ public class ReportsPanel extends JPanel {
     // ─────────────────────────────────────────
     private void generateReport(String reportType) {
         LocalDate from = toLocalDate((Date) fromSpinner.getValue());
-        LocalDate to = toLocalDate((Date) toSpinner.getValue());
+        LocalDate to   = toLocalDate((Date) toSpinner.getValue());
 
         if (from.isAfter(to)) {
             JOptionPane.showMessageDialog(this,
                 "\"From\" date cannot be after \"To\" date.",
-                "Invalid Date Range",
-                JOptionPane.WARNING_MESSAGE);
+                "Invalid Date Range", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -262,7 +267,6 @@ public class ReportsPanel extends JPanel {
 
         String[] columns = { "Rank", "Product", "Category", "Qty Sold", "Revenue" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
-            @Override
             public boolean isCellEditable(int row, int col) { return false; }
         };
 
@@ -291,7 +295,6 @@ public class ReportsPanel extends JPanel {
 
         String[] columns = { "Category", "Intended For", "Qty Sold", "Revenue" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
-            @Override
             public boolean isCellEditable(int row, int col) { return false; }
         };
 
@@ -318,7 +321,7 @@ public class ReportsPanel extends JPanel {
     // ─────────────────────────────────────────
     private void exportToPdf() {
         LocalDate from = toLocalDate((Date) fromSpinner.getValue());
-        LocalDate to = toLocalDate((Date) toSpinner.getValue());
+        LocalDate to   = toLocalDate((Date) toSpinner.getValue());
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setSelectedFile(new java.io.File(getReportFileName(from, to)));
@@ -335,11 +338,10 @@ public class ReportsPanel extends JPanel {
             PdfWriter.getInstance(document, new FileOutputStream(file));
             document.open();
 
-            // title
-            com.lowagie.text.Font titleFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 18, com.lowagie.text.Font.BOLD);
-            com.lowagie.text.Font subFont   = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 11, com.lowagie.text.Font.NORMAL);
+            com.lowagie.text.Font titleFont  = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 18, com.lowagie.text.Font.BOLD);
+            com.lowagie.text.Font subFont    = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 11, com.lowagie.text.Font.NORMAL);
             com.lowagie.text.Font headerFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 11, com.lowagie.text.Font.BOLD);
-            com.lowagie.text.Font cellFont  = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.NORMAL);
+            com.lowagie.text.Font cellFont   = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 10, com.lowagie.text.Font.NORMAL);
 
             document.add(new Paragraph(getReportTitle(), titleFont));
             document.add(new Paragraph("Date Range: " + from + " to " + to, subFont));
@@ -347,17 +349,16 @@ public class ReportsPanel extends JPanel {
             document.add(new Paragraph(" "));
 
             switch (currentReportType) {
-                case "summary" -> exportSummaryPdf(document, from, to, headerFont, cellFont);
+                case "summary"      -> exportSummaryPdf(document, from, to, headerFont, cellFont);
                 case "top_products" -> exportTopProductsPdf(document, from, to, headerFont, cellFont);
-                case "segment" -> exportSegmentPdf(document, from, to, headerFont, cellFont);
+                case "segment"      -> exportSegmentPdf(document, from, to, headerFont, cellFont);
             }
 
             document.close();
 
             JOptionPane.showMessageDialog(this,
                 "Report saved to:\n" + file.getAbsolutePath(),
-                "Export Successful",
-                JOptionPane.INFORMATION_MESSAGE);
+                "Export Successful", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
@@ -376,13 +377,10 @@ public class ReportsPanel extends JPanel {
 
         addPdfHeader(table, "Metric", headerFont);
         addPdfHeader(table, "Value", headerFont);
-
         addPdfCell(table, "Total Transactions", cellFont);
         addPdfCell(table, String.valueOf(data.getTotalTransactions()), cellFont);
-
         addPdfCell(table, "Total Revenue", cellFont);
         addPdfCell(table, String.format("₱%,.2f", data.getTotalRevenue()), cellFont);
-
         addPdfCell(table, "Average Transaction Value", cellFont);
         addPdfCell(table, String.format("₱%,.2f", data.getAverageTransactionValue()), cellFont);
 
@@ -465,6 +463,33 @@ public class ReportsPanel extends JPanel {
 
     private String getReportFileName(LocalDate from, LocalDate to) {
         return getReportTitle().replace(" ", "_") + "_" + from + "_to_" + to + ".pdf";
+    }
+
+    // ─────────────────────────────────────────
+    // THEME
+    // ─────────────────────────────────────────
+    public void applyTheme() {
+        setBackground(ThemeManager.getBg());
+        headerPanel.setBackground(ThemeManager.getBg());
+        dateControlsPanel.setBackground(ThemeManager.getBg());
+        reportBtnsPanel.setBackground(ThemeManager.getBg());
+        bodyPanel.setBackground(ThemeManager.getBg());
+        footerPanel.setBackground(ThemeManager.getBg());
+
+        titleLabel.setForeground(ThemeManager.getText());
+        fromLabel.setForeground(ThemeManager.getText());
+        toLabel.setForeground(ThemeManager.getText());
+
+        reportPanel.setBackground(ThemeManager.getSurface());
+        reportPanel.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorder(), 1));
+
+        // re-generate current report with new theme if one is active
+        if (currentReportType != null) {
+            generateReport(currentReportType);
+        }
+
+        repaint();
+        revalidate();
     }
 
     // ─────────────────────────────────────────

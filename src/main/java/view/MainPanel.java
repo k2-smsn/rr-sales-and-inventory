@@ -72,6 +72,8 @@ public class MainPanel extends JPanel {
         sidebar.applyTheme();
         dashboardPanel.applyTheme();
         inventoryPanel.applyTheme();
+        transactionsPanel.applyTheme();
+        reportsPanel.applyTheme();
         repaint();
         revalidate();
     }

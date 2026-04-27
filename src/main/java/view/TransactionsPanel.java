@@ -33,6 +33,12 @@ public class TransactionsPanel extends JPanel {
     private JSpinner toSpinner;
     private JPanel gridPanel;
     private JScrollPane gridScroll;
+    private JPanel headerPanel;
+    private JPanel controlsPanel;
+    private JPanel bodyPanel;
+    private JLabel titleLabel;
+    private JLabel fromLabel;
+    private JLabel toLabel;
 
     public TransactionsPanel() {
         setLayout(new BorderLayout(0, 0));
@@ -42,7 +48,6 @@ public class TransactionsPanel extends JPanel {
         add(buildHeader(), BorderLayout.NORTH);
         add(buildBody(), BorderLayout.CENTER);
 
-        // default load — this month
         setThisMonth();
     }
 
@@ -50,66 +55,63 @@ public class TransactionsPanel extends JPanel {
     // HEADER
     // ─────────────────────────────────────────
     private JPanel buildHeader() {
-        JPanel header = new JPanel(new BorderLayout(0, 12));
-        header.setBackground(ThemeManager.getBg());
-        header.setBorder(UIUtils.paddingBorder(0, 0, 16, 0));
+        headerPanel = new JPanel(new BorderLayout(0, 12));
+        headerPanel.setBackground(ThemeManager.getBg());
+        headerPanel.setBorder(UIUtils.paddingBorder(0, 0, 16, 0));
 
-        JLabel title = UIUtils.createLabel("Transactions", ThemeManager.FONT_HEADING, ThemeManager.getText());
+        titleLabel = UIUtils.createLabel("Transactions", ThemeManager.FONT_HEADING, ThemeManager.getText());
 
-        // date controls
-        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        controls.setBackground(ThemeManager.getBg());
+        controlsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        controlsPanel.setBackground(ThemeManager.getBg());
 
-        // spinners
         SpinnerDateModel fromModel = new SpinnerDateModel();
-        SpinnerDateModel toModel = new SpinnerDateModel();
+        SpinnerDateModel toModel   = new SpinnerDateModel();
 
         fromSpinner = new JSpinner(fromModel);
-        toSpinner = new JSpinner(toModel);
+        toSpinner   = new JSpinner(toModel);
 
-        JSpinner.DateEditor fromEditor = new JSpinner.DateEditor(fromSpinner, "MM/dd/yyyy");
-        JSpinner.DateEditor toEditor = new JSpinner.DateEditor(toSpinner, "MM/dd/yyyy");
-
-        fromSpinner.setEditor(fromEditor);
-        toSpinner.setEditor(toEditor);
+        fromSpinner.setEditor(new JSpinner.DateEditor(fromSpinner, "MM/dd/yyyy"));
+        toSpinner.setEditor(new JSpinner.DateEditor(toSpinner, "MM/dd/yyyy"));
 
         fromSpinner.setFont(ThemeManager.FONT_REGULAR);
         toSpinner.setFont(ThemeManager.FONT_REGULAR);
         fromSpinner.setPreferredSize(new Dimension(130, 34));
         toSpinner.setPreferredSize(new Dimension(130, 34));
 
-        // shortcut buttons
-        JButton todayBtn    = UIUtils.createNeutralButton("Today");
-        JButton weekBtn     = UIUtils.createNeutralButton("This Week");
-        JButton monthBtn    = UIUtils.createNeutralButton("This Month");
-        JButton filterBtn   = UIUtils.createAccentButton("Filter");
+        JButton todayBtn  = UIUtils.createNeutralButton("Today");
+        JButton weekBtn   = UIUtils.createNeutralButton("This Week");
+        JButton monthBtn  = UIUtils.createNeutralButton("This Month");
+        JButton filterBtn = UIUtils.createAccentButton("Filter");
 
-        todayBtn.addActionListener(e -> setToday());
-        weekBtn.addActionListener(e -> setThisWeek());
-        monthBtn.addActionListener(e -> setThisMonth());
+        todayBtn.addActionListener(e  -> setToday());
+        weekBtn.addActionListener(e   -> setThisWeek());
+        monthBtn.addActionListener(e  -> setThisMonth());
         filterBtn.addActionListener(e -> loadTransactions());
 
-        controls.add(UIUtils.createLabel("From:", ThemeManager.FONT_REGULAR, ThemeManager.getText()));
-        controls.add(fromSpinner);
-        controls.add(UIUtils.createLabel("To:", ThemeManager.FONT_REGULAR, ThemeManager.getText()));
-        controls.add(toSpinner);
-        controls.add(todayBtn);
-        controls.add(weekBtn);
-        controls.add(monthBtn);
-        controls.add(filterBtn);
+        fromLabel = UIUtils.createLabel("From:", ThemeManager.FONT_REGULAR, ThemeManager.getText());
+        toLabel   = UIUtils.createLabel("To:", ThemeManager.FONT_REGULAR, ThemeManager.getText());
 
-        header.add(title, BorderLayout.NORTH);
-        header.add(controls, BorderLayout.CENTER);
+        controlsPanel.add(fromLabel);
+        controlsPanel.add(fromSpinner);
+        controlsPanel.add(toLabel);
+        controlsPanel.add(toSpinner);
+        controlsPanel.add(todayBtn);
+        controlsPanel.add(weekBtn);
+        controlsPanel.add(monthBtn);
+        controlsPanel.add(filterBtn);
 
-        return header;
+        headerPanel.add(titleLabel, BorderLayout.NORTH);
+        headerPanel.add(controlsPanel, BorderLayout.CENTER);
+
+        return headerPanel;
     }
 
     // ─────────────────────────────────────────
     // BODY
     // ─────────────────────────────────────────
     private JPanel buildBody() {
-        JPanel body = new JPanel(new BorderLayout());
-        body.setBackground(ThemeManager.getBg());
+        bodyPanel = new JPanel(new BorderLayout());
+        bodyPanel.setBackground(ThemeManager.getBg());
 
         gridPanel = new JPanel(new GridLayout(0, 2, 16, 16));
         gridPanel.setBackground(ThemeManager.getBg());
@@ -119,9 +121,9 @@ public class TransactionsPanel extends JPanel {
         gridScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         gridScroll.getViewport().setBackground(ThemeManager.getBg());
 
-        body.add(gridScroll, BorderLayout.CENTER);
+        bodyPanel.add(gridScroll, BorderLayout.CENTER);
 
-        return body;
+        return bodyPanel;
     }
 
     // ─────────────────────────────────────────
@@ -136,32 +138,29 @@ public class TransactionsPanel extends JPanel {
 
     private void setThisWeek() {
         LocalDate now = LocalDate.now();
-        LocalDate startOfWeek = now.with(DayOfWeek.MONDAY);
-        fromSpinner.setValue(toDate(startOfWeek));
+        fromSpinner.setValue(toDate(now.with(DayOfWeek.MONDAY)));
         toSpinner.setValue(toDate(now));
         loadTransactions();
     }
 
     private void setThisMonth() {
         LocalDate now = LocalDate.now();
-        LocalDate startOfMonth = now.withDayOfMonth(1);
-        fromSpinner.setValue(toDate(startOfMonth));
+        fromSpinner.setValue(toDate(now.withDayOfMonth(1)));
         toSpinner.setValue(toDate(now));
         loadTransactions();
     }
 
     // ─────────────────────────────────────────
-    // LOAD TRANSACTIONS
+    // LOAD
     // ─────────────────────────────────────────
     private void loadTransactions() {
         LocalDate from = toLocalDate((Date) fromSpinner.getValue());
-        LocalDate to = toLocalDate((Date) toSpinner.getValue());
+        LocalDate to   = toLocalDate((Date) toSpinner.getValue());
 
         if (from.isAfter(to)) {
             JOptionPane.showMessageDialog(this,
                 "\"From\" date cannot be after \"To\" date.",
-                "Invalid Date Range",
-                JOptionPane.WARNING_MESSAGE);
+                "Invalid Date Range", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -169,13 +168,14 @@ public class TransactionsPanel extends JPanel {
             List<Transaction> transactions = transactionService.getTransactionsByDateRange(from, to);
             renderTransactions(transactions);
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Failed to load transactions: " + e.getMessage(),
+            JOptionPane.showMessageDialog(this,
+                "Failed to load transactions: " + e.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+
     // ─────────────────────────────────────────
-    // RENDER TRANSACTIONS
+    // RENDER
     // ─────────────────────────────────────────
     private void renderTransactions(List<Transaction> transactions) {
         gridPanel.removeAll();
@@ -183,8 +183,7 @@ public class TransactionsPanel extends JPanel {
         if (transactions.isEmpty()) {
             JLabel empty = UIUtils.createLabel(
                 "No transactions found for the selected date range.",
-                ThemeManager.FONT_REGULAR,
-                ThemeManager.getSubtext()
+                ThemeManager.FONT_REGULAR, ThemeManager.getSubtext()
             );
             empty.setBorder(UIUtils.paddingBorder(24, 24, 24, 24));
             gridPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -194,7 +193,6 @@ public class TransactionsPanel extends JPanel {
             for (Transaction transaction : transactions) {
                 gridPanel.add(buildTransactionCard(transaction));
             }
-            // if odd number, fill last slot with empty panel
             if (transactions.size() % 2 != 0) {
                 JPanel filler = new JPanel();
                 filler.setBackground(ThemeManager.getBg());
@@ -216,23 +214,18 @@ public class TransactionsPanel extends JPanel {
         card.setPreferredSize(new Dimension(0, 280));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
 
-        // — top: id, date, status
+        // top
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(ThemeManager.getSurface());
 
         JLabel idLabel = UIUtils.createLabel(
-            "Transaction #" + transaction.getId(),
-            ThemeManager.FONT_BOLD,
-            ThemeManager.getText()
+            "Transaction #" + transaction.getId(), ThemeManager.FONT_BOLD, ThemeManager.getText()
         );
         JLabel dateLabel = UIUtils.createLabel(
-            transaction.getCreatedAt().toString(),
-            ThemeManager.FONT_SMALL,
-            ThemeManager.getSubtext()
+            transaction.getCreatedAt().toString(), ThemeManager.FONT_SMALL, ThemeManager.getSubtext()
         );
         JLabel statusLabel = UIUtils.createLabel(
-            transaction.getStatus().toUpperCase(),
-            ThemeManager.FONT_SMALL,
+            transaction.getStatus().toUpperCase(), ThemeManager.FONT_SMALL,
             transaction.getStatus().equalsIgnoreCase("void") ? ThemeManager.DANGER : ThemeManager.SUCCESS
         );
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -245,7 +238,7 @@ public class TransactionsPanel extends JPanel {
         topBar.add(idDatePanel, BorderLayout.WEST);
         topBar.add(statusLabel, BorderLayout.EAST);
 
-        // — middle: receipt items
+        // receipt
         JPanel receiptPanel = new JPanel();
         receiptPanel.setLayout(new BoxLayout(receiptPanel, BoxLayout.Y_AXIS));
         receiptPanel.setBackground(ThemeManager.getSurface());
@@ -258,7 +251,7 @@ public class TransactionsPanel extends JPanel {
             receiptPanel.add(UIUtils.createSeparator());
 
             for (ItemSold item : items) {
-                Product product = transactionService.getProductById(item.getProductId());
+                Product product    = transactionService.getProductById(item.getProductId());
                 String productName = product != null ? product.getName() : "Unknown Product";
                 receiptPanel.add(buildReceiptRow(productName, item));
                 total += item.getSubTotal().doubleValue();
@@ -270,9 +263,7 @@ public class TransactionsPanel extends JPanel {
             totalRow.setBackground(ThemeManager.getSurface());
             totalRow.setBorder(UIUtils.paddingBorder(6, 4, 2, 4));
             JLabel totalLabel = UIUtils.createLabel(
-                String.format("Total: ₱%,.2f", total),
-                ThemeManager.FONT_BOLD,
-                ThemeManager.getText()
+                String.format("Total: ₱%,.2f", total), ThemeManager.FONT_BOLD, ThemeManager.getText()
             );
             totalLabel.setHorizontalAlignment(SwingConstants.RIGHT);
             totalRow.add(totalLabel, BorderLayout.EAST);
@@ -280,9 +271,7 @@ public class TransactionsPanel extends JPanel {
 
         } catch (SQLException e) {
             receiptPanel.add(UIUtils.createLabel(
-                "Failed to load items.",
-                ThemeManager.FONT_SMALL,
-                ThemeManager.DANGER
+                "Failed to load items.", ThemeManager.FONT_SMALL, ThemeManager.DANGER
             ));
         }
 
@@ -292,7 +281,7 @@ public class TransactionsPanel extends JPanel {
         receiptScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         receiptScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // — bottom: void button
+        // bottom
         JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
         bottomBar.setBackground(ThemeManager.getSurface());
 
@@ -300,12 +289,9 @@ public class TransactionsPanel extends JPanel {
             JButton voidBtn = UIUtils.createDangerButton("Cancel Transaction");
             voidBtn.addActionListener(e -> {
                 if (!UserSession.getInstance().isAdmin()) {
-                    JOptionPane.showMessageDialog(
-                        this,
+                    JOptionPane.showMessageDialog(this,
                         "This action requires admin access.",
-                        "Access Denied",
-                        JOptionPane.WARNING_MESSAGE
-                    );
+                        "Access Denied", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
                 onVoidTransaction(transaction);
@@ -335,27 +321,19 @@ public class TransactionsPanel extends JPanel {
         row.setBackground(ThemeManager.getSurface());
         row.setBorder(UIUtils.paddingBorder(4, 4, 4, 4));
         row.add(UIUtils.createLabel(productName, ThemeManager.FONT_REGULAR, ThemeManager.getText()));
-        row.add(UIUtils.createLabel(
-            item.getQuantity().toPlainString() ,
-            ThemeManager.FONT_REGULAR, ThemeManager.getText()
-        ));
-        row.add(UIUtils.createLabel(
-            String.format("₱%,.2f", item.getSubTotal()),
-            ThemeManager.FONT_REGULAR, ThemeManager.getText()
-        ));
+        row.add(UIUtils.createLabel(item.getQuantity().toPlainString(), ThemeManager.FONT_REGULAR, ThemeManager.getText()));
+        row.add(UIUtils.createLabel(String.format("₱%,.2f", item.getSubTotal()), ThemeManager.FONT_REGULAR, ThemeManager.getText()));
         return row;
     }
 
     // ─────────────────────────────────────────
-    // VOID TRANSACTION
+    // VOID
     // ─────────────────────────────────────────
     private void onVoidTransaction(Transaction transaction) {
         int choice = JOptionPane.showConfirmDialog(
             this,
             "Are you sure you want to cancel Transaction #" + transaction.getId() + "?\nThis cannot be undone.",
-            "Cancel Transaction",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
+            "Cancel Transaction", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE
         );
         if (choice == JOptionPane.YES_OPTION) {
             try {
@@ -367,6 +345,27 @@ public class TransactionsPanel extends JPanel {
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    // ─────────────────────────────────────────
+    // THEME
+    // ─────────────────────────────────────────
+    public void applyTheme() {
+        setBackground(ThemeManager.getBg());
+        headerPanel.setBackground(ThemeManager.getBg());
+        controlsPanel.setBackground(ThemeManager.getBg());
+        bodyPanel.setBackground(ThemeManager.getBg());
+        gridPanel.setBackground(ThemeManager.getBg());
+        gridScroll.getViewport().setBackground(ThemeManager.getBg());
+        gridScroll.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorder(), 1));
+
+        titleLabel.setForeground(ThemeManager.getText());
+        fromLabel.setForeground(ThemeManager.getText());
+        toLabel.setForeground(ThemeManager.getText());
+
+        loadTransactions();
+        repaint();
+        revalidate();
     }
 
     // ─────────────────────────────────────────

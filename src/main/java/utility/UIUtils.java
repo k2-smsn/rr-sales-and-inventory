@@ -73,6 +73,35 @@ public class UIUtils {
     public static JButton createNeutralButton(String text) {
         return createButton(text, ThemeManager.getBorder(), ThemeManager.getText());
     }
+    
+    public static JButton createFilterButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(ThemeManager.FONT_BOLD);
+        button.setBackground(ThemeManager.getBorder());
+        button.setForeground(ThemeManager.getText());
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!button.getBackground().equals(ThemeManager.ACCENT)) {
+                    button.setBackground(ThemeManager.getBorder().darker());
+                }
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!button.getBackground().equals(ThemeManager.ACCENT)) {
+                    button.setBackground(ThemeManager.getBorder());
+                }
+            }
+        });
+
+        return button;
+    }
 
     public static JPanel createCard() {
         JPanel panel = new JPanel();

@@ -32,11 +32,22 @@ public class InventoryPanel extends JPanel {
     private JTable table;
     private DefaultTableModel tableModel;
 
+    private String currentFilter = "all";
+
+    private JButton allFilterBtn;
+    private JButton unavailableFilterBtn;
+    private JButton lowStockFilterBtn;
+    private JButton outOfStockFilterBtn;
+    private JPanel headerPanel;
+    private JPanel topRow;
+    private JPanel filterRow;
+    private JPanel rightPanel;
+    private JLabel titleLabel;
+
     private static final String[] COLUMNS = {
         "ID", "Name", "Unit", "Price/Unit", "Stock", "Intended For", "Category", "Sales", "Status", "Actions"
     };
 
-    // column indices
     private static final int COL_ID           = 0;
     private static final int COL_NAME         = 1;
     private static final int COL_UNIT         = 2;
@@ -57,6 +68,8 @@ public class InventoryPanel extends JPanel {
 
         add(buildHeader(), BorderLayout.NORTH);
         add(buildBody(), BorderLayout.CENTER);
+
+        updateFilterButtons();
     }
 
     // ─────────────────────────────────────────
@@ -74,37 +87,76 @@ public class InventoryPanel extends JPanel {
     // HEADER
     // ─────────────────────────────────────────
     private JPanel buildHeader() {
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(ThemeManager.getBg());
-        header.setBorder(UIUtils.paddingBorder(0, 0, 16, 0));
+        headerPanel = new JPanel(new BorderLayout(0, 10));
+        headerPanel.setBackground(ThemeManager.getBg());
+        headerPanel.setBorder(UIUtils.paddingBorder(0, 0, 16, 0));
 
-        JLabel title = UIUtils.createLabel("Inventory", ThemeManager.FONT_HEADING, ThemeManager.getText());
+        topRow = new JPanel(new BorderLayout());
+        topRow.setBackground(ThemeManager.getBg());
+
+        titleLabel = UIUtils.createLabel("Inventory", ThemeManager.FONT_HEADING, ThemeManager.getText());
 
         searchField = UIUtils.createTextField("Search products...");
         searchField.setPreferredSize(new Dimension(280, 34));
         searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e)  { onSearch(); }
-            @Override
-            public void removeUpdate(DocumentEvent e)  { onSearch(); }
-            @Override
-            public void changedUpdate(DocumentEvent e) { onSearch(); }
+            public void insertUpdate(DocumentEvent e)  { renderCurrentSearch(); }
+            public void removeUpdate(DocumentEvent e)  { renderCurrentSearch(); }
+            public void changedUpdate(DocumentEvent e) { renderCurrentSearch(); }
         });
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        right.setBackground(ThemeManager.getBg());
-        right.add(searchField);
+        rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        rightPanel.setBackground(ThemeManager.getBg());
+        rightPanel.add(searchField);
 
         if (UserSession.getInstance().isAdmin()) {
             JButton addProductBtn = UIUtils.createAccentButton("+ Add Product");
             addProductBtn.addActionListener(e -> showAddProductDialog());
-            right.add(addProductBtn);
+            rightPanel.add(addProductBtn);
         }
 
-        header.add(title, BorderLayout.WEST);
-        header.add(right, BorderLayout.EAST);
+        topRow.add(titleLabel, BorderLayout.WEST);
+        topRow.add(rightPanel, BorderLayout.EAST);
 
-        return header;
+        filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        filterRow.setBackground(ThemeManager.getBg());
+
+        allFilterBtn         = buildFilterButton("All", "all");
+        unavailableFilterBtn = buildFilterButton("Unavailable", "unavailable");
+        lowStockFilterBtn    = buildFilterButton("Low Stock", "low_stock");
+        outOfStockFilterBtn  = buildFilterButton("Out of Stock", "out_of_stock");
+
+        filterRow.add(allFilterBtn);
+        filterRow.add(unavailableFilterBtn);
+        filterRow.add(lowStockFilterBtn);
+        filterRow.add(outOfStockFilterBtn);
+
+        headerPanel.add(topRow, BorderLayout.NORTH);
+        headerPanel.add(filterRow, BorderLayout.SOUTH);
+
+        return headerPanel;
+    }
+
+    private JButton buildFilterButton(String label, String filterKey) {
+        JButton btn = UIUtils.createFilterButton(label);
+        btn.addActionListener(e -> {
+            currentFilter = filterKey;
+            updateFilterButtons();
+            renderCurrentSearch();
+        });
+        return btn;
+    }
+
+    private void updateFilterButtons() {
+        updateFilterButtonStyle(allFilterBtn, "all");
+        updateFilterButtonStyle(unavailableFilterBtn, "unavailable");
+        updateFilterButtonStyle(lowStockFilterBtn, "low_stock");
+        updateFilterButtonStyle(outOfStockFilterBtn, "out_of_stock");
+    }
+
+    private void updateFilterButtonStyle(JButton btn, String filterKey) {
+        boolean isActive = currentFilter.equals(filterKey);
+        btn.setBackground(isActive ? ThemeManager.ACCENT : ThemeManager.getBorder());
+        btn.setForeground(isActive ? Color.WHITE : ThemeManager.getText());
     }
 
     // ─────────────────────────────────────────
@@ -129,14 +181,10 @@ public class InventoryPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         UIUtils.applyTheme(table);
 
-        // status column renderer
         table.getColumnModel().getColumn(COL_STATUS).setCellRenderer(UIUtils.createStatusRenderer());
-
-        // actions column renderer and editor
         table.getColumnModel().getColumn(COL_ACTIONS).setCellRenderer(new UIUtils.ButtonPanelRenderer());
         table.getColumnModel().getColumn(COL_ACTIONS).setCellEditor(new UIUtils.ButtonPanelEditor());
 
-        // column widths
         table.getColumnModel().getColumn(COL_ID).setPreferredWidth(40);
         table.getColumnModel().getColumn(COL_NAME).setPreferredWidth(160);
         table.getColumnModel().getColumn(COL_UNIT).setPreferredWidth(60);
@@ -149,31 +197,37 @@ public class InventoryPanel extends JPanel {
         table.getColumnModel().getColumn(COL_ACTIONS).setPreferredWidth(220);
 
         JScrollPane scroll = UIUtils.createScrollPane(table);
-
         body.add(scroll, BorderLayout.CENTER);
 
-        renderProducts(allProducts);
+        renderCurrentSearch();
 
         return body;
     }
 
     // ─────────────────────────────────────────
-    // SEARCH
+    // RENDER
     // ─────────────────────────────────────────
-    private void onSearch() {
-        String query = searchField.getText().trim().toLowerCase();
+    private void renderCurrentSearch() {
+        String query = searchField != null ? searchField.getText().trim().toLowerCase() : "";
+
         List<Product> filtered = allProducts.stream()
             .filter(p -> p.getName().toLowerCase().startsWith(query))
+            .filter(p -> switch (currentFilter) {
+                case "unavailable"  -> p.getStatus().equalsIgnoreCase("unavailable");
+                case "low_stock"    -> !p.isOutOfStock()
+                                    && p.getStockQuantity().compareTo(BigDecimal.valueOf(7)) <= 0
+                                    && !p.getStatus().equalsIgnoreCase("unavailable");
+                case "out_of_stock" -> p.isOutOfStock()
+                                    && !p.getStatus().equalsIgnoreCase("unavailable");
+                default             -> true;
+            })
             .collect(java.util.stream.Collectors.toList());
+
         renderProducts(filtered);
     }
 
-    // ─────────────────────────────────────────
-    // RENDER
-    // ─────────────────────────────────────────
     private void renderProducts(List<Product> products) {
         tableModel.setRowCount(0);
-
         for (Product product : products) {
             tableModel.addRow(new Object[]{
                 product.getId(),
@@ -226,10 +280,14 @@ public class InventoryPanel extends JPanel {
         content.setBackground(ThemeManager.getSurface());
         content.setBorder(UIUtils.paddingBorder(20, 20, 20, 20));
 
-        JLabel titleLabel = UIUtils.createLabel("Adjust Stock — " + product.getName(), ThemeManager.FONT_BOLD, ThemeManager.getText());
+        JLabel titleLabel = UIUtils.createLabel(
+            "Adjust Stock — " + product.getName(), ThemeManager.FONT_BOLD, ThemeManager.getText()
+        );
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel idLabel = UIUtils.createLabel("Product ID: " + product.getId(), ThemeManager.FONT_SMALL, ThemeManager.getSubtext());
+        JLabel idLabel = UIUtils.createLabel(
+            "Product ID: " + product.getId(), ThemeManager.FONT_SMALL, ThemeManager.getSubtext()
+        );
         idLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel currentStock = UIUtils.createLabel(
@@ -249,7 +307,7 @@ public class InventoryPanel extends JPanel {
         btnPanel.setBackground(ThemeManager.getSurface());
         btnPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton addBtn = UIUtils.createAccentButton("Add");
+        JButton addBtn      = UIUtils.createAccentButton("Add");
         JButton subtractBtn = UIUtils.createDangerButton("Subtract");
 
         addBtn.addActionListener(e -> {
@@ -349,12 +407,12 @@ public class InventoryPanel extends JPanel {
         JButton saveBtn = UIUtils.createAccentButton("Add Product");
         saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         saveBtn.addActionListener(e -> {
-            String name = nameField.getText().trim();
-            String unit = (String) unitBox.getSelectedItem();
-            String priceRaw = priceField.getText().trim();
-            String stockRaw = stockField.getText().trim();
+            String name       = nameField.getText().trim();
+            String unit       = (String) unitBox.getSelectedItem();
+            String priceRaw   = priceField.getText().trim();
+            String stockRaw   = stockField.getText().trim();
             String intendedFor = (String) intendedForBox.getSelectedItem();
-            String category = (String) categoryBox.getSelectedItem();
+            String category   = (String) categoryBox.getSelectedItem();
 
             if (name.isEmpty()) { warningLabel.setText("Product name is required."); return; }
 
@@ -438,11 +496,9 @@ public class InventoryPanel extends JPanel {
         if (choice == JOptionPane.YES_OPTION) {
             try {
                 inventoryService.toggleAvailability(product);
-                if (table.isEditing()) {
-                    table.getCellEditor().stopCellEditing(); 
-                }
+                if (table.isEditing()) table.getCellEditor().stopCellEditing();
                 loadProducts();
-                renderProducts(allProducts);
+                renderCurrentSearch();
             } catch (SQLException e) {
                 showError("Failed to update status: " + e.getMessage());
             }
@@ -472,20 +528,40 @@ public class InventoryPanel extends JPanel {
 
     private void refreshAfterAction(JDialog dialog) {
         dialog.dispose();
-        if (table.isEditing()) {
-            table.getCellEditor().stopCellEditing();
-        }
+        if (table.isEditing()) table.getCellEditor().stopCellEditing();
         loadProducts();
-        renderProducts(allProducts);
+        renderCurrentSearch();
     }
 
     public void applyTheme() {
         setBackground(ThemeManager.getBg());
+
+        // header panels
+        headerPanel.setBackground(ThemeManager.getBg());
+        topRow.setBackground(ThemeManager.getBg());
+        rightPanel.setBackground(ThemeManager.getBg());
+        filterRow.setBackground(ThemeManager.getBg());
+        titleLabel.setForeground(ThemeManager.getText());
+
+        // search field
+        searchField.setBackground(ThemeManager.getSurface());
+        searchField.setForeground(ThemeManager.getText());
+        searchField.setCaretColor(ThemeManager.getText());
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(ThemeManager.getBorder(), 1, true),
+            BorderFactory.createEmptyBorder(6, 10, 6, 10)
+        ));
+
+        // table
         UIUtils.applyTheme(table);
         table.getColumnModel().getColumn(COL_STATUS).setCellRenderer(UIUtils.createStatusRenderer());
         table.getColumnModel().getColumn(COL_ACTIONS).setCellRenderer(new UIUtils.ButtonPanelRenderer());
         table.getColumnModel().getColumn(COL_ACTIONS).setCellEditor(new UIUtils.ButtonPanelEditor());
-        renderProducts(allProducts);
+
+        // filter buttons
+        updateFilterButtons();
+        renderCurrentSearch();
+
         repaint();
         revalidate();
     }

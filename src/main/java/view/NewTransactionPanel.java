@@ -32,7 +32,7 @@ public class NewTransactionPanel extends JPanel {
 
     private final List<CartItem> cart = new ArrayList<>();
     private List<Product> allProducts = new ArrayList<>();
-    private final List<Product> searchResults = new ArrayList<>();
+    //private final List<Product> searchResults = new ArrayList<>();
 
     // — Search section
     private JTextField searchField;

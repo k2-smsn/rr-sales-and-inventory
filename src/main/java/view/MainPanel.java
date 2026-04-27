@@ -69,6 +69,7 @@ public class MainPanel extends JPanel {
     public void applyTheme() {
         setBackground(ThemeManager.getBg());
         contentPanel.setBackground(ThemeManager.getBg());
+        sidebar.applyTheme();
         dashboardPanel.applyTheme();
         inventoryPanel.applyTheme();
         repaint();

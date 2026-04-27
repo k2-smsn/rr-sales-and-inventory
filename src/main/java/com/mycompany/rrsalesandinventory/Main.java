@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import utility.ThemeManager;
 import utility.UserSession;
+import view.LoginPanel;
 import view.MainPanel;
 /**
  *
@@ -37,7 +38,7 @@ public class Main {
             frame.setContentPane(contentPane);
 
             // ── swap this line to test different panels ──
-            navigateTo(new MainPanel());
+            navigateTo(new LoginPanel());
             // navigateTo(new DashboardPanel());
             // navigateTo(new LoginPanel());
 

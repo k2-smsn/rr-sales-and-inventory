@@ -32,19 +32,37 @@ public class DashboardPanel extends JPanel {
     private final AiIntegration aiIntegration       = new AiIntegration();
     private final MainPanel mainPanel;
 
-    // income labels
+    // income
     private JLabel dailyIncomeLabel;
     private JLabel weeklyIncomeLabel;
     private JLabel monthlyIncomeLabel;
+    private JPanel incomeCardsPanel;
+    private JPanel[] incomeCards = new JPanel[3];
+    private JLabel[] incomePeriodLabels = new JLabel[3];
 
-    // stock alerts
+    // header
+    private JPanel headerPanel;
+    private JLabel titleLabel;
+    private JPanel topSection;
+
+    // alerts
     private JPanel alertsListPanel;
     private JLabel noAlertsLabel;
+    private JPanel alertsSection;
+    private JLabel alertsTitleLabel;
+    private JScrollPane alertsScroll;
 
-    // ai chat
+    // chat
     private JPanel chatHistoryPanel;
     private JScrollPane chatScroll;
     private JTextField chatInput;
+    private JPanel chatSection;
+    private JLabel chatTitleLabel;
+    private JPanel inputArea;
+
+    // split
+    private JSplitPane splitPane;
+    private JPanel bottomWrapper;
 
     public DashboardPanel(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
@@ -52,14 +70,13 @@ public class DashboardPanel extends JPanel {
         setBackground(ThemeManager.getBg());
         setBorder(UIUtils.paddingBorder(24, 24, 24, 24));
 
-        // top section — header + income cards stacked
-        JPanel topSection = new JPanel(new BorderLayout(0, 16));
+        topSection = new JPanel(new BorderLayout(0, 16));
         topSection.setBackground(ThemeManager.getBg());
         topSection.add(buildHeader(), BorderLayout.NORTH);
         topSection.add(buildIncomeCards(), BorderLayout.CENTER);
 
         add(topSection, BorderLayout.NORTH);
-        add(buildBottomSection(), BorderLayout.CENTER); // CENTER takes all remaining space
+        add(buildBottomSection(), BorderLayout.CENTER);
 
         loadIncomeData();
         loadStockAlerts();
@@ -69,59 +86,54 @@ public class DashboardPanel extends JPanel {
     // HEADER
     // ─────────────────────────────────────────
     private JPanel buildHeader() {
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(ThemeManager.getBg());
-        header.setBorder(UIUtils.paddingBorder(0, 0, 8, 0));
+        headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(ThemeManager.getBg());
+        headerPanel.setBorder(UIUtils.paddingBorder(0, 0, 8, 0));
 
-        JLabel title = UIUtils.createLabel("Dashboard", ThemeManager.FONT_HEADING, ThemeManager.getText());
+        titleLabel = UIUtils.createLabel("Dashboard", ThemeManager.FONT_HEADING, ThemeManager.getText());
 
         JButton newTransactionBtn = UIUtils.createAccentButton("+ New Transaction");
         newTransactionBtn.addActionListener(e -> mainPanel.showPanel("newTransaction"));
 
-        header.add(title, BorderLayout.WEST);
-        header.add(newTransactionBtn, BorderLayout.EAST);
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(newTransactionBtn, BorderLayout.EAST);
 
-        return header;
+        return headerPanel;
     }
 
     // ─────────────────────────────────────────
     // INCOME CARDS
     // ─────────────────────────────────────────
     private JPanel buildIncomeCards() {
-        JPanel cards = new JPanel(new GridLayout(1, 3, 16, 0));
-        cards.setBackground(ThemeManager.getBg());
-        cards.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        incomeCardsPanel = new JPanel(new GridLayout(1, 3, 16, 0));
+        incomeCardsPanel.setBackground(ThemeManager.getBg());
 
         dailyIncomeLabel   = UIUtils.createLabel("₱0.00", ThemeManager.FONT_HEADING, ThemeManager.SUCCESS);
         weeklyIncomeLabel  = UIUtils.createLabel("₱0.00", ThemeManager.FONT_HEADING, ThemeManager.SUCCESS);
         monthlyIncomeLabel = UIUtils.createLabel("₱0.00", ThemeManager.FONT_HEADING, ThemeManager.SUCCESS);
 
-        cards.add(buildIncomeCard("Today", dailyIncomeLabel));
-        cards.add(buildIncomeCard("This Week", weeklyIncomeLabel));
-        cards.add(buildIncomeCard("This Month", monthlyIncomeLabel));
+        String[] periods = { "Today", "This Week", "This Month" };
+        JLabel[] valueLabels = { dailyIncomeLabel, weeklyIncomeLabel, monthlyIncomeLabel };
 
-        return cards;
-    }
+        for (int i = 0; i < 3; i++) {
+            incomeCards[i] = new JPanel(new GridLayout(2, 1));
+            incomeCards[i].setBackground(ThemeManager.getSurface());
+            incomeCards[i].setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(ThemeManager.getBorder(), 1, true),
+                UIUtils.paddingBorder(16, 16, 16, 16)
+            ));
+            incomePeriodLabels[i] = UIUtils.createLabel(periods[i], ThemeManager.FONT_SMALL, ThemeManager.getSubtext());
+            valueLabels[i].setHorizontalAlignment(SwingConstants.LEFT);
+            incomeCards[i].add(incomePeriodLabels[i]);
+            incomeCards[i].add(valueLabels[i]);
+            incomeCardsPanel.add(incomeCards[i]);
+        }
 
-    private JPanel buildIncomeCard(String period, JLabel valueLabel) {
-        JPanel card = new JPanel(new GridLayout(2, 1));
-        card.setBackground(ThemeManager.getSurface());
-        card.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(ThemeManager.getBorder(), 1, true),
-            UIUtils.paddingBorder(16, 16, 16, 16)
-        ));
-
-        JLabel periodLabel = UIUtils.createLabel(period, ThemeManager.FONT_SMALL, ThemeManager.getSubtext());
-        valueLabel.setHorizontalAlignment(SwingConstants.LEFT);
-
-        card.add(periodLabel);
-        card.add(valueLabel);
-
-        return card;
+        return incomeCardsPanel;
     }
 
     private void loadIncomeData() {
-        LocalDate today = LocalDate.now();
+        LocalDate today        = LocalDate.now();
         LocalDate startOfWeek  = today.with(DayOfWeek.MONDAY);
         LocalDate startOfMonth = today.withDayOfMonth(1);
 
@@ -141,34 +153,23 @@ public class DashboardPanel extends JPanel {
     }
 
     // ─────────────────────────────────────────
-    // BOTTOM SECTION — alerts + ai chat
+    // BOTTOM SECTION
     // ─────────────────────────────────────────
     private JPanel buildBottomSection() {
-        JPanel bottom = new JPanel(new GridLayout(1, 2, 16, 0));
-        bottom.setBackground(ThemeManager.getBg());
+        alertsSection = buildAlertsSection();
+        chatSection   = buildChatSection();
 
-        // 40% alerts, 60% chat — approximate via preferred sizes
-        JPanel alertsWrapper = buildAlertsSection();
-        JPanel chatWrapper   = buildChatSection();
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, alertsSection, chatSection);
+        splitPane.setResizeWeight(0.4);
+        splitPane.setDividerSize(8);
+        splitPane.setBorder(null);
+        splitPane.setBackground(ThemeManager.getBg());
 
-        bottom.add(alertsWrapper);
-        bottom.add(chatWrapper);
+        bottomWrapper = new JPanel(new BorderLayout());
+        bottomWrapper.setBackground(ThemeManager.getBg());
+        bottomWrapper.add(splitPane, BorderLayout.CENTER);
 
-        // enforce 40/60 split
-        alertsWrapper.setPreferredSize(new Dimension(0, 0));
-        chatWrapper.setPreferredSize(new Dimension(0, 0));
-
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, alertsWrapper, chatWrapper);
-        split.setResizeWeight(0.4);
-        split.setDividerSize(8);
-        split.setBorder(null);
-        split.setBackground(ThemeManager.getBg());
-
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBackground(ThemeManager.getBg());
-        wrapper.add(split, BorderLayout.CENTER);
-
-        return wrapper;
+        return bottomWrapper;
     }
 
     // ─────────────────────────────────────────
@@ -178,26 +179,22 @@ public class DashboardPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(ThemeManager.getBg());
 
-        JLabel title = UIUtils.createLabel("Stock Alerts", ThemeManager.FONT_SUBHEADING, ThemeManager.getText());
+        alertsTitleLabel = UIUtils.createLabel("Stock Alerts", ThemeManager.FONT_SUBHEADING, ThemeManager.getText());
 
         alertsListPanel = new JPanel();
         alertsListPanel.setLayout(new BoxLayout(alertsListPanel, BoxLayout.Y_AXIS));
         alertsListPanel.setBackground(ThemeManager.getSurface());
 
-        noAlertsLabel = UIUtils.createLabel(
-            "No stock alerts.",
-            ThemeManager.FONT_REGULAR,
-            ThemeManager.getSubtext()
-        );
+        noAlertsLabel = UIUtils.createLabel("No stock alerts.", ThemeManager.FONT_REGULAR, ThemeManager.getSubtext());
         noAlertsLabel.setBorder(UIUtils.paddingBorder(12, 12, 12, 12));
         noAlertsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JScrollPane scroll = UIUtils.createScrollPane(alertsListPanel);
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        alertsScroll = UIUtils.createScrollPane(alertsListPanel);
+        alertsScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        alertsScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        panel.add(title, BorderLayout.NORTH);
-        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(alertsTitleLabel, BorderLayout.NORTH);
+        panel.add(alertsScroll, BorderLayout.CENTER);
 
         return panel;
     }
@@ -216,9 +213,7 @@ public class DashboardPanel extends JPanel {
             }
         } catch (SQLException e) {
             alertsListPanel.add(UIUtils.createLabel(
-                "Failed to load alerts.",
-                ThemeManager.FONT_SMALL,
-                ThemeManager.DANGER
+                "Failed to load alerts.", ThemeManager.FONT_SMALL, ThemeManager.DANGER
             ));
         }
         alertsListPanel.revalidate();
@@ -236,10 +231,9 @@ public class DashboardPanel extends JPanel {
         Color alertColor   = outOfStock ? ThemeManager.DANGER : ThemeManager.WARNING;
         String alertText   = outOfStock ? "Out of stock" : "Low stock";
 
-        JLabel nameLabel = UIUtils.createLabel(
+        JLabel nameLabel   = UIUtils.createLabel(
             "#" + product.getId() + " — " + product.getName(),
-            ThemeManager.FONT_REGULAR,
-            ThemeManager.getText()
+            ThemeManager.FONT_REGULAR, ThemeManager.getText()
         );
         JLabel statusLabel = UIUtils.createLabel(alertText, ThemeManager.FONT_SMALL, alertColor);
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -251,15 +245,14 @@ public class DashboardPanel extends JPanel {
     }
 
     // ─────────────────────────────────────────
-    // AI CHAT SECTION
+    // CHAT SECTION
     // ─────────────────────────────────────────
     private JPanel buildChatSection() {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(ThemeManager.getBg());
 
-        JLabel title = UIUtils.createLabel("AI Assistant", ThemeManager.FONT_SUBHEADING, ThemeManager.getText());
+        chatTitleLabel = UIUtils.createLabel("AI Assistant", ThemeManager.FONT_SUBHEADING, ThemeManager.getText());
 
-        // chat history
         chatHistoryPanel = new JPanel();
         chatHistoryPanel.setLayout(new BoxLayout(chatHistoryPanel, BoxLayout.Y_AXIS));
         chatHistoryPanel.setBackground(ThemeManager.getSurface());
@@ -269,15 +262,13 @@ public class DashboardPanel extends JPanel {
         chatScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         chatScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // input area
-        JPanel inputArea = new JPanel(new BorderLayout(8, 0));
+        inputArea = new JPanel(new BorderLayout(8, 0));
         inputArea.setBackground(ThemeManager.getBg());
 
         chatInput = UIUtils.createTextField("Ask about inventory or sales...");
         JButton sendBtn = UIUtils.createAccentButton("Send");
 
         chatInput.addKeyListener(new KeyAdapter() {
-            @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) onSend();
             }
@@ -287,7 +278,7 @@ public class DashboardPanel extends JPanel {
         inputArea.add(chatInput, BorderLayout.CENTER);
         inputArea.add(sendBtn, BorderLayout.EAST);
 
-        panel.add(title, BorderLayout.NORTH);
+        panel.add(chatTitleLabel, BorderLayout.NORTH);
         panel.add(chatScroll, BorderLayout.CENTER);
         panel.add(inputArea, BorderLayout.SOUTH);
 
@@ -301,17 +292,13 @@ public class DashboardPanel extends JPanel {
         chatInput.setText("");
         addChatBubble("You", userMessage, ThemeManager.ACCENT, Color.WHITE);
 
-        // build context string secretly prepended to the prompt
-        String context = buildAiContext();
+        String context    = buildAiContext();
         String fullPrompt = context + "\nUser question: " + userMessage;
 
-        // run in background so UI doesn't freeze
         SwingWorker<String, Void> worker = new SwingWorker<>() {
-            @Override
             protected String doInBackground() {
                 return aiIntegration.getAIResponse(fullPrompt);
             }
-            @Override
             protected void done() {
                 try {
                     String response = get();
@@ -328,7 +315,6 @@ public class DashboardPanel extends JPanel {
         StringBuilder context = new StringBuilder();
         context.append("[SYSTEM CONTEXT - not visible to user]\n");
 
-        // stock data
         try {
             List<Product> products = inventoryService.getAllProducts("");
             context.append("Current Inventory:\n");
@@ -342,7 +328,6 @@ public class DashboardPanel extends JPanel {
             context.append("Inventory data unavailable.\n");
         }
 
-        // sales data — today, this week, this month
         try {
             LocalDate today        = LocalDate.now();
             LocalDate startOfWeek  = today.with(DayOfWeek.MONDAY);
@@ -374,7 +359,7 @@ public class DashboardPanel extends JPanel {
         bubble.setAlignmentX(Component.LEFT_ALIGNMENT);
         bubble.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        JLabel senderLabel = UIUtils.createLabel(sender, ThemeManager.FONT_BOLD, fg);
+        JLabel senderLabel    = UIUtils.createLabel(sender, ThemeManager.FONT_BOLD, fg);
         JTextArea messageArea = new JTextArea(message);
         messageArea.setFont(ThemeManager.FONT_REGULAR);
         messageArea.setForeground(fg);
@@ -393,7 +378,6 @@ public class DashboardPanel extends JPanel {
         chatHistoryPanel.revalidate();
         chatHistoryPanel.repaint();
 
-        // scroll to bottom
         SwingUtilities.invokeLater(() -> {
             JScrollBar bar = chatScroll.getVerticalScrollBar();
             bar.setValue(bar.getMaximum());
@@ -404,9 +388,54 @@ public class DashboardPanel extends JPanel {
     // THEME
     // ─────────────────────────────────────────
     public void applyTheme() {
+        // main panels
         setBackground(ThemeManager.getBg());
+        topSection.setBackground(ThemeManager.getBg());
+        headerPanel.setBackground(ThemeManager.getBg());
+        bottomWrapper.setBackground(ThemeManager.getBg());
+        splitPane.setBackground(ThemeManager.getBg());
+
+        // title
+        titleLabel.setForeground(ThemeManager.getText());
+
+        // income cards
+        incomeCardsPanel.setBackground(ThemeManager.getBg());
+        for (int i = 0; i < 3; i++) {
+            incomeCards[i].setBackground(ThemeManager.getSurface());
+            incomeCards[i].setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(ThemeManager.getBorder(), 1, true),
+                UIUtils.paddingBorder(16, 16, 16, 16)
+            ));
+            incomePeriodLabels[i].setForeground(ThemeManager.getSubtext());
+        }
+
+        // alerts section
+        alertsSection.setBackground(ThemeManager.getBg());
+        alertsTitleLabel.setForeground(ThemeManager.getText());
+        alertsListPanel.setBackground(ThemeManager.getSurface());
+        alertsScroll.getViewport().setBackground(ThemeManager.getSurface());
+        alertsScroll.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorder(), 1));
+        noAlertsLabel.setForeground(ThemeManager.getSubtext());
+
+        // chat section
+        chatSection.setBackground(ThemeManager.getBg());
+        chatTitleLabel.setForeground(ThemeManager.getText());
+        chatHistoryPanel.setBackground(ThemeManager.getSurface());
+        chatScroll.getViewport().setBackground(ThemeManager.getSurface());
+        chatScroll.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorder(), 1));
+        inputArea.setBackground(ThemeManager.getBg());
+        chatInput.setBackground(ThemeManager.getSurface());
+        chatInput.setForeground(ThemeManager.getText());
+        chatInput.setCaretColor(ThemeManager.getText());
+        chatInput.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(ThemeManager.getBorder(), 1, true),
+            BorderFactory.createEmptyBorder(6, 10, 6, 10)
+        ));
+
+        // reload data
         loadIncomeData();
         loadStockAlerts();
+
         repaint();
         revalidate();
     }

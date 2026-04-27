@@ -25,6 +25,9 @@ public class SidebarPanel extends JPanel {
     private JButton reportsBtn;
     private JButton themeBtn;
     private JButton logoutBtn;
+    private JPanel navPanel;
+    private JPanel bottomPanel;
+    private JLabel appNameLabel;
 
     public SidebarPanel(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
@@ -33,57 +36,56 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(200, 0));
         setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, ThemeManager.getBorder()));
 
-        add(buildNav(), BorderLayout.CENTER);
-        add(buildBottom(), BorderLayout.SOUTH);
-    }
-
-    private JPanel buildNav() {
-        JPanel nav = new JPanel();
-        nav.setLayout(new BoxLayout(nav, BoxLayout.Y_AXIS));
-        nav.setBackground(ThemeManager.getSurface());
-        nav.setBorder(UIUtils.paddingBorder(16, 0, 16, 0));
-
-        JLabel appName = UIUtils.createLabel("  Animal Supply", ThemeManager.FONT_BOLD, ThemeManager.getText());
-        appName.setAlignmentX(Component.LEFT_ALIGNMENT);
-        appName.setBorder(UIUtils.paddingBorder(8, 16, 24, 16));
-
+        // create buttons first before building panels
         dashboardBtn    = buildNavButton("Dashboard");
         inventoryBtn    = buildNavButton("Inventory");
         transactionsBtn = buildNavButton("Transactions");
         reportsBtn      = buildNavButton("Reports");
+        themeBtn        = buildNavButton(ThemeManager.isDarkMode() ? "Light Mode" : "Dark Mode");
+        logoutBtn       = buildNavButton("Logout");
 
         dashboardBtn.addActionListener(e    -> mainPanel.showPanel("dashboard"));
         inventoryBtn.addActionListener(e    -> mainPanel.showPanel("inventory"));
         transactionsBtn.addActionListener(e -> mainPanel.showPanel("transactions"));
         reportsBtn.addActionListener(e      -> mainPanel.showPanel("reports"));
+        themeBtn.addActionListener(e        -> onToggleTheme());
+        logoutBtn.addActionListener(e       -> onLogout());
 
-        nav.add(appName);
-        nav.add(dashboardBtn);
-        nav.add(inventoryBtn);
-        nav.add(transactionsBtn);
-        nav.add(reportsBtn);
+        add(buildNav(), BorderLayout.CENTER);
+        add(buildBottom(), BorderLayout.SOUTH);
+    }
 
-        return nav;
+    private JPanel buildNav() {
+        navPanel = new JPanel();
+        navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
+        navPanel.setBackground(ThemeManager.getSurface());
+        navPanel.setBorder(UIUtils.paddingBorder(16, 0, 16, 0));
+
+        appNameLabel = UIUtils.createLabel("  Animal Supply", ThemeManager.FONT_BOLD, ThemeManager.getText());
+        appNameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        appNameLabel.setBorder(UIUtils.paddingBorder(8, 16, 24, 16));
+
+        navPanel.add(appNameLabel);
+        navPanel.add(dashboardBtn);
+        navPanel.add(inventoryBtn);
+        navPanel.add(transactionsBtn);
+        navPanel.add(reportsBtn);
+
+        return navPanel;
     }
 
     private JPanel buildBottom() {
-        JPanel bottom = new JPanel();
-        bottom.setLayout(new BoxLayout(bottom, BoxLayout.Y_AXIS));
-        bottom.setBackground(ThemeManager.getSurface());
-        bottom.setBorder(UIUtils.paddingBorder(8, 0, 16, 0));
+        bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        bottomPanel.setBackground(ThemeManager.getSurface());
+        bottomPanel.setBorder(UIUtils.paddingBorder(8, 0, 16, 0));
 
-        themeBtn  = buildNavButton(ThemeManager.isDarkMode() ? "Light Mode" : "Dark Mode");
-        logoutBtn = buildNavButton("Logout");
+        bottomPanel.add(UIUtils.createSeparator());
+        bottomPanel.add(Box.createVerticalStrut(8));
+        bottomPanel.add(themeBtn);
+        bottomPanel.add(logoutBtn);
 
-        themeBtn.addActionListener(e -> onToggleTheme());
-        logoutBtn.addActionListener(e -> onLogout());
-
-        bottom.add(UIUtils.createSeparator());
-        bottom.add(Box.createVerticalStrut(8));
-        bottom.add(themeBtn);
-        bottom.add(logoutBtn);
-
-        return bottom;
+        return bottomPanel;
     }
 
     private JButton buildNavButton(String text) {
@@ -100,14 +102,10 @@ public class SidebarPanel extends JPanel {
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        Color hover = ThemeManager.isDarkMode()
-            ? ThemeManager.DARK_BORDER
-            : ThemeManager.LIGHT_BORDER;
-
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
-                btn.setBackground(hover);
+                btn.setBackground(ThemeManager.getBorder());
             }
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
@@ -135,5 +133,24 @@ public class SidebarPanel extends JPanel {
             UserSession.getInstance().logout();
             Main.navigateTo(new LoginPanel());
         }
+    }
+
+    public void applyTheme() {
+        setBackground(ThemeManager.getSurface());
+        setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, ThemeManager.getBorder()));
+
+        navPanel.setBackground(ThemeManager.getSurface());
+        bottomPanel.setBackground(ThemeManager.getSurface());
+        appNameLabel.setForeground(ThemeManager.getText());
+
+        for (JButton btn : new JButton[]{
+            dashboardBtn, inventoryBtn, transactionsBtn, reportsBtn, themeBtn, logoutBtn
+        }) {
+            btn.setBackground(ThemeManager.getSurface());
+            btn.setForeground(ThemeManager.getText());
+        }
+
+        repaint();
+        revalidate();
     }
 }

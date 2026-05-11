@@ -1,84 +1,33 @@
-# RR Animal Supply Shop — Sales & Inventory System
+# RR Sales and Inventory System
 
-A desktop sales and inventory management system for an animal supply shop. Built with Java Swing, PostgreSQL, and Google Gemini AI.
-
----
-
-## Features
-
-- Process and record sales transactions with automatic stock decrement
-- Real-time inventory monitoring with low stock and out of stock alerts
-- Transaction history with date filtering and void capability
-- Sales reports (summary, top products, category & segment performance) with PDF export
-- AI assistant for inventory and sales inquiries
-- Role-based access control (Admin and Staff)
-- Light and dark mode UI
+A desktop app for managing sales and inventory for an animal supply shop. Built with Java Swing and PostgreSQL. Has two user roles (admin and staff), light/dark mode, and a built-in AI assistant.
 
 ---
 
-## Requirements
+## Before You Start
 
-- Java JDK 17 or higher
-- PostgreSQL 13 or higher
-- Maven (for dependency management)
-- A Google Gemini API key (for the AI assistant)
+Make sure you have these installed:
 
----
-
-## Dependencies
-
-Add these to your `pom.xml`:
-
-```xml
-<dependencies>
-    <!-- PostgreSQL JDBC Driver -->
-    <dependency>
-        <groupId>org.postgresql</groupId>
-        <artifactId>postgresql</artifactId>
-        <version>42.7.3</version>
-    </dependency>
-
-    <!-- dotenv for environment variables -->
-    <dependency>
-        <groupId>io.github.cdimascio</groupId>
-        <artifactId>dotenv-java</artifactId>
-        <version>3.0.0</version>
-    </dependency>
-
-    <!-- OpenPDF for report export -->
-    <dependency>
-        <groupId>com.github.librepdf</groupId>
-        <artifactId>openpdf</artifactId>
-        <version>1.3.30</version>
-    </dependency>
-
-    <!-- Google Gemini AI SDK -->
-    <dependency>
-        <groupId>com.google.genai</groupId>
-        <artifactId>google-genai</artifactId>
-        <version>1.0.0</version>
-    </dependency>
-</dependencies>
-```
+- Java JDK 17+
+- PostgreSQL 13+
+- Apache Maven
+- A Google Gemini API key — get one free at [aistudio.google.com](https://aistudio.google.com)
 
 ---
 
-## Database Setup
+## Getting the Database Ready
 
-### 1. Create the Database
-
-Open your PostgreSQL client (pgAdmin or psql) and create a new database:
+### Create the database
 
 ```sql
 CREATE DATABASE rr_sales_inventory;
 ```
 
-### 2. Create the Tables
+### Create the tables
 
-Connect to the database and run the following SQL:
+Connect to that database and run this:
 
 ```sql
--- Products table
 CREATE TABLE products (
     id              SERIAL PRIMARY KEY,
     name            TEXT NOT NULL,
@@ -91,14 +40,12 @@ CREATE TABLE products (
     status          TEXT NOT NULL DEFAULT 'available'
 );
 
--- Transactions table
 CREATE TABLE transactions (
     id          SERIAL PRIMARY KEY,
     created_at  DATE NOT NULL,
     status      TEXT NOT NULL DEFAULT 'active'
 );
 
--- Items sold table
 CREATE TABLE items_sold (
     id              SERIAL PRIMARY KEY,
     transaction_id  INTEGER NOT NULL REFERENCES transactions(id),
@@ -109,10 +56,10 @@ CREATE TABLE items_sold (
 );
 ```
 
-### 3. Valid Column Values
+### Accepted values for certain columns
 
-| Column | Valid Values |
-|--------|-------------|
+| Column | Accepted Values |
+|--------|----------------|
 | `products.unit` | `piece`, `kg`, `L` |
 | `products.intended_for` | `chicken`, `pigeon`, `duck`, `dog`, `cat`, `cow`, `carabao` |
 | `products.category` | `food`, `medicine`, `general`, `accessories` |
@@ -121,11 +68,9 @@ CREATE TABLE items_sold (
 
 ---
 
-## Environment Setup
+## Setting Up the .env File
 
-### 1. Create the `.env` File
-
-In the root directory of your project (same level as `pom.xml`), create a file named `.env`:
+Create a file called `.env` in the root of the project (same level as `pom.xml`) and fill it in:
 
 ```
 DB_URL=jdbc:postgresql://localhost:5432/rr_sales_inventory
@@ -141,22 +86,9 @@ STAFF_PASSWORD=your_staff_password
 AI_API_KEY=your_gemini_api_key
 ```
 
-### 2. Fill in Your Values
+If your PostgreSQL is running on a different port or host, update `DB_URL` accordingly. Everything else is straightforward — just fill in your own values.
 
-| Key | Description |
-|-----|-------------|
-| `DB_URL` | Your PostgreSQL connection URL. Replace `localhost` and `5432` if your server is elsewhere. Replace `rr_sales_inventory` with your database name if different. |
-| `DB_USER` | Your PostgreSQL username (default is usually `postgres`) |
-| `DB_PASSWORD` | Your PostgreSQL user password |
-| `ADMIN_USERNAME` | The username for the admin account |
-| `ADMIN_PASSWORD` | The password for the admin account |
-| `STAFF_USERNAME` | The username for the staff account |
-| `STAFF_PASSWORD` | The password for the staff account |
-| `AI_API_KEY` | Your Google Gemini API key — get one at [aistudio.google.com](https://aistudio.google.com) |
-
-### 3. Keep the `.env` File Private
-
-Add `.env` to your `.gitignore` to prevent it from being committed to version control:
+Make sure `.env` is in your `.gitignore` so you don't accidentally push credentials:
 
 ```
 .env
@@ -164,86 +96,186 @@ Add `.env` to your `.gitignore` to prevent it from being committed to version co
 
 ---
 
-## Running the Application
+## Dependencies
 
-### Via IDE (NetBeans / IntelliJ / Eclipse)
+These go inside `<dependencies>` in your `pom.xml`:
 
-1. Open the project in your IDE
-2. Make sure all Maven dependencies are downloaded (right-click project → Maven → Reload)
-3. Run `Main.java` as the main class
+```xml
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>42.7.3</version>
+</dependency>
 
-### Via Command Line
+<dependency>
+    <groupId>com.google.genai</groupId>
+    <artifactId>google-genai</artifactId>
+    <version>1.4.1</version>
+</dependency>
+
+<dependency>
+    <groupId>com.github.librepdf</groupId>
+    <artifactId>openpdf</artifactId>
+    <version>1.3.30</version>
+</dependency>
+
+<dependency>
+    <groupId>io.github.cdimascio</groupId>
+    <artifactId>dotenv-java</artifactId>
+    <version>3.2.0</version>
+</dependency>
+```
+
+To build a runnable JAR, add this inside `<build><plugins>`:
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-shade-plugin</artifactId>
+    <version>3.5.1</version>
+    <executions>
+        <execution>
+            <phase>package</phase>
+            <goals>
+                <goal>shade</goal>
+            </goals>
+            <configuration>
+                <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        <mainClass>com.mycompany.rrsalesandinventory.Main</mainClass>
+                    </transformer>
+                </transformers>
+                <createDependencyReducedPom>false</createDependencyReducedPom>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+---
+
+## Running the App
+
+### From NetBeans
+
+Right-click the project → **Clean and Build**, then **Run**.
+
+### From the terminal
 
 ```bash
-mvn compile
-mvn exec:java -Dexec.mainClass="com.yourpackage.Main"
+mvn package
+java -jar target/rrSalesAndInventory-1.0-SNAPSHOT.jar
 ```
+
+Make sure the `.env` file is in the same directory you're running the command from.
+
+### As a standalone JAR (distributing to others)
+
+Put these two files in the same folder:
+
+```
+your_folder/
+├── rrSalesAndInventory-1.0-SNAPSHOT.jar
+└── .env
+```
+
+On Linux, create a `run.sh` script for easy launching:
+
+```bash
+#!/bin/bash
+cd "$(dirname "$0")"
+java -jar rrSalesAndInventory-1.0-SNAPSHOT.jar
+```
+
+Make it executable:
+
+```bash
+chmod +x run.sh
+```
+
+Then just double-click `run.sh` to launch.
+
+---
+
+## What It Does
+
+- Record sales transactions — stock is decremented automatically on confirmation
+- Search products and add them to a cart with quantity controls
+- Monitor inventory with stock alerts on the dashboard (threshold: 7 units)
+- Adjust stock levels and toggle product availability (admin only)
+- View transaction history filtered by date, with the option to void transactions (admin only)
+- Generate three types of reports: sales summary, top selling products, and category/segment performance
+- Export any report to PDF
+- Ask the built-in AI assistant questions about current inventory and sales data
+- Switch between light and dark mode
+
+---
+
+## User Roles
+
+| | Admin | Staff |
+|---|---|---|
+| Process transactions | ✓ | ✓ |
+| View inventory | ✓ | ✓ |
+| Add products | ✓ | ✗ |
+| Adjust stock | ✓ | ✗ |
+| Toggle availability | ✓ | ✗ |
+| View transactions | ✓ | ✓ |
+| Void transactions | ✓ | ✗ |
+| Generate reports | ✓ | ✓ |
+| Export to PDF | ✓ | ✓ |
 
 ---
 
 ## Project Structure
 
 ```
-src/
-├── main/
-│   └── java/
-│       ├── ai/
-│       │   └── AiIntegration.java          # Google Gemini AI wrapper
-│       ├── config/
-│       │   └── AppConfig.java              # Environment variable loader
-│       ├── dao/
-│       │   ├── DBConnection.java           # Database connection factory
-│       │   ├── ProductDAO.java             # Product database operations
-│       │   ├── TransactionDAO.java         # Transaction database operations
-│       │   ├── ItemSoldDAO.java            # Items sold database operations
-│       │   └── ReportsDAO.java             # Aggregation queries for reports
-│       ├── entity/
-│       │   ├── Product.java                # Product model
-│       │   ├── Transaction.java            # Transaction model
-│       │   ├── ItemSold.java               # Items sold model
-│       │   ├── CartItem.java               # In-memory cart item
-│       │   ├── Receipt.java                # Transaction result object
-│       │   ├── SalesSummaryData.java       # Sales summary report data
-│       │   ├── TopProductData.java         # Top products report data
-│       │   └── SegmentData.java            # Segment performance report data
-│       ├── service/
-│       │   ├── InventoryService.java       # Product/inventory business logic
-│       │   ├── SalesService.java           # Transaction processing logic
-│       │   ├── TransactionService.java     # Transaction retrieval and voiding
-│       │   └── ReportsService.java         # Report data aggregation
-│       ├── utility/
-│       │   ├── ThemeManager.java           # Colors, fonts, and theme state
-│       │   ├── UIUtils.java                # Reusable Swing component factory
-│       │   └── UserSession.java            # Current logged-in user state
-│       └── view/
-│           ├── Main.java                   # Application entry point
-│           ├── LoginPanel.java             # Login screen
-│           ├── MainPanel.java              # App shell with sidebar and CardLayout
-│           ├── SidebarPanel.java           # Navigation sidebar
-│           ├── DashboardPanel.java         # Dashboard with income, alerts, AI chat
-│           ├── NewTransactionPanel.java    # New transaction / checkout screen
-│           ├── InventoryPanel.java         # Inventory management
-│           ├── TransactionsPanel.java      # Transaction history
-│           └── ReportsPanel.java          # Reports and PDF export
+src/main/java/
+├── ai/
+│   └── AiIntegration.java          # Gemini AI wrapper and chat session
+├── config/
+│   └── AppConfig.java              # Loads all values from the .env file
+├── dao/
+│   ├── DBConnection.java           # Opens database connections
+│   ├── ProductDAO.java             # All product SQL operations
+│   ├── TransactionDAO.java         # All transaction SQL operations
+│   ├── ItemSoldDAO.java            # All items_sold SQL operations
+│   └── ReportsDAO.java             # Aggregation queries for reports
+├── entity/
+│   ├── Product.java                # Maps to the products table
+│   ├── Transaction.java            # Maps to the transactions table
+│   ├── ItemSold.java               # Maps to the items_sold table
+│   ├── CartItem.java               # In-memory object for cart items
+│   ├── Receipt.java                # Result returned after a sale is processed
+│   ├── SalesSummaryData.java       # Data object for sales summary report
+│   ├── TopProductData.java         # Data object for top products report
+│   └── SegmentData.java            # Data object for segment performance report
+├── service/
+│   ├── InventoryService.java       # Product search, stock, availability logic
+│   ├── SalesService.java           # Transaction processing logic
+│   ├── TransactionService.java     # Transaction retrieval and voiding
+│   └── ReportsService.java         # Pulls and aggregates report data
+├── utility/
+│   ├── ThemeManager.java           # Colors, fonts, and light/dark mode state
+│   ├── UIUtils.java                # Factory for reusable styled Swing components
+│   └── UserSession.java            # Stores the currently logged-in user
+└── view/
+    ├── Main.java                   # Entry point, app window setup
+    ├── LoginPanel.java             # Login screen
+    ├── MainPanel.java              # App shell — sidebar + page switcher
+    ├── SidebarPanel.java           # Navigation, theme toggle, logout
+    ├── DashboardPanel.java         # Income cards, stock alerts, AI chat
+    ├── NewTransactionPanel.java    # Checkout / new sale screen
+    ├── InventoryPanel.java         # Product list and management
+    ├── TransactionsPanel.java      # Transaction history
+    └── ReportsPanel.java           # Report generation and PDF export
 ```
 
 ---
 
-## User Accounts
+## Things Worth Knowing
 
-The system has exactly two accounts configured in the `.env` file.
-
-| Role | Access |
-|------|--------|
-| **Admin** | Full access — can process transactions, manage inventory (add products, adjust stock, toggle availability), view transactions, void transactions, and generate reports |
-| **Staff** | Can process transactions and view inventory and transactions — cannot adjust stock, add products, toggle availability, or void transactions |
-
----
-
-## Notes
-
-- The system does not delete any data. Products can be marked unavailable but not deleted. Transactions can be voided but not deleted.
-- Voided transactions are excluded from all income calculations and reports.
-- Stock is automatically decremented when a transaction is confirmed. Voiding a transaction does **not** automatically restore stock — this must be done manually via the Adjust Stock feature.
-- The low stock alert threshold is set to 7 units. Products at or below this quantity (but above 0) show as low stock on the dashboard.
-- The AI assistant only answers questions about the current inventory and sales data. It will decline questions outside this scope.
+- Nothing gets deleted. Products can be marked unavailable and transactions can be voided, but no data is ever removed from the database.
+- Voiding a transaction does not restore stock. If a transaction is cancelled, stock has to be manually adjusted through the inventory page.
+- The AI assistant only answers questions about the shop's inventory and sales. It will decline anything outside that scope.
+- The `.env` file must always be in the same directory as the JAR when running outside of the IDE.

@@ -37,11 +37,9 @@ public class Main {
             contentPane.setBackground(ThemeManager.getBg());
             frame.setContentPane(contentPane);
 
-            // ── swap this line to test different panels ──
+            
             navigateTo(new LoginPanel());
-            // navigateTo(new DashboardPanel());
-            // navigateTo(new LoginPanel());
-
+            
             frame.setVisible(true);
         });
 

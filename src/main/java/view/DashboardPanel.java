@@ -151,6 +151,11 @@ public class DashboardPanel extends JPanel {
             monthlyIncomeLabel.setText("Error");
         }
     }
+    
+    public void refresh() { //called outside on switch
+        loadIncomeData();
+        loadStockAlerts();
+    }
 
     // ─────────────────────────────────────────
     // BOTTOM SECTION

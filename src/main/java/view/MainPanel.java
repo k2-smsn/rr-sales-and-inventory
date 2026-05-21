@@ -52,7 +52,10 @@ public class MainPanel extends JPanel {
             contentPanel.add(new NewTransactionPanel(this), "newTransaction");
         }
         if (name.equals("inventory")) {
-            inventoryPanel.refresh(); //refresh ui on switch
+            inventoryPanel.refresh();
+        }
+        if (name.equals("dashboard")) {
+            dashboardPanel.refresh();
         }
         cardLayout.show(contentPanel, name);
     }

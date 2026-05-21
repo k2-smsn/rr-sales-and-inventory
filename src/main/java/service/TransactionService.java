@@ -14,6 +14,7 @@ import dao.TransactionDAO;
 import entity.ItemSold;
 import entity.Product;
 import entity.Transaction;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
@@ -43,7 +44,22 @@ public class TransactionService {
         return productDAO.getById(productId);
     }
 
-    public void voidTransaction(int transactionId) throws SQLException {
-        transactionDAO.updateStatus(transactionId, "void");
+   public void voidTransaction(int transactionId) throws SQLException {
+        try (Connection conn = utility.DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                List<ItemSold> items = itemSoldDAO.getByTransactionId(transactionId);
+                for (ItemSold item : items) {
+                    productDAO.incrementStock(item.getProductId(), item.getQuantity(), conn);
+                    productDAO.decrementSales(item.getProductId(), conn);
+                }
+                transactionDAO.updateStatus(transactionId, conn);
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        }
     }
+  
 }

@@ -532,6 +532,11 @@ public class InventoryPanel extends JPanel {
         loadProducts();
         renderCurrentSearch();
     }
+    
+    public void refresh() { //called outide of class
+        loadProducts();
+        renderCurrentSearch();
+    }
 
     public void applyTheme() {
         setBackground(ThemeManager.getBg());

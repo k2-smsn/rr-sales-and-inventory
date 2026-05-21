@@ -68,4 +68,12 @@ public class TransactionDAO {
             stmt.executeUpdate();
         }
     }
+    
+    public void updateStatus(int transactionId, Connection conn) throws SQLException {
+        String sql = "UPDATE transactions SET status = 'void' WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, transactionId);
+            stmt.executeUpdate();
+        }
+    }
 }

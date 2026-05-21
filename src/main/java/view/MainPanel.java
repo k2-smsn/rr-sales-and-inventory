@@ -51,6 +51,9 @@ public class MainPanel extends JPanel {
         if (name.equals("newTransaction")) {
             contentPanel.add(new NewTransactionPanel(this), "newTransaction");
         }
+        if (name.equals("inventory")) {
+            inventoryPanel.refresh(); //refresh ui on switch
+        }
         cardLayout.show(contentPanel, name);
     }
 
@@ -65,7 +68,7 @@ public class MainPanel extends JPanel {
         revalidate();
         repaint();
     }
-
+    
     public void applyTheme() {
         setBackground(ThemeManager.getBg());
         contentPanel.setBackground(ThemeManager.getBg());

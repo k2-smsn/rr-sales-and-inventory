@@ -130,4 +130,21 @@ public class ProductDAO {
             stmt.executeUpdate();
         }
     }
+    
+    public void incrementStock(int productId, BigDecimal quantity, Connection conn) throws SQLException {
+        String sql = "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setBigDecimal(1, quantity);
+            stmt.setInt(2, productId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void decrementSales(int productId, Connection conn) throws SQLException {
+        String sql = "UPDATE products SET sales = GREATEST(sales - 1, 0) WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, productId);
+            stmt.executeUpdate();
+        }
+    }
 }

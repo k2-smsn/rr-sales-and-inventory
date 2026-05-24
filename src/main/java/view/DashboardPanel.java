@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package view;
 
-/**
- *
- * @author k2
- */
 import ai.AiIntegration;
 import entity.Product;
 import javax.swing.*;
@@ -37,8 +29,8 @@ public class DashboardPanel extends JPanel {
     private JLabel weeklyIncomeLabel;
     private JLabel monthlyIncomeLabel;
     private JPanel incomeCardsPanel;
-    private JPanel[] incomeCards = new JPanel[3];
-    private JLabel[] incomePeriodLabels = new JLabel[3];
+    private JPanel[] incomeCards          = new JPanel[3];
+    private JLabel[] incomePeriodLabels   = new JLabel[3];
 
     // header
     private JPanel headerPanel;
@@ -85,6 +77,7 @@ public class DashboardPanel extends JPanel {
     // ─────────────────────────────────────────
     // HEADER
     // ─────────────────────────────────────────
+
     private JPanel buildHeader() {
         headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(ThemeManager.getBg());
@@ -104,6 +97,7 @@ public class DashboardPanel extends JPanel {
     // ─────────────────────────────────────────
     // INCOME CARDS
     // ─────────────────────────────────────────
+
     private JPanel buildIncomeCards() {
         incomeCardsPanel = new JPanel(new GridLayout(1, 3, 16, 0));
         incomeCardsPanel.setBackground(ThemeManager.getBg());
@@ -112,8 +106,8 @@ public class DashboardPanel extends JPanel {
         weeklyIncomeLabel  = UIUtils.createLabel("₱0.00", ThemeManager.FONT_HEADING, ThemeManager.SUCCESS);
         monthlyIncomeLabel = UIUtils.createLabel("₱0.00", ThemeManager.FONT_HEADING, ThemeManager.SUCCESS);
 
-        String[] periods = { "Today", "This Week", "This Month" };
-        JLabel[] valueLabels = { dailyIncomeLabel, weeklyIncomeLabel, monthlyIncomeLabel };
+        String[] periods       = { "Today", "This Week", "This Month" };
+        JLabel[] valueLabels   = { dailyIncomeLabel, weeklyIncomeLabel, monthlyIncomeLabel };
 
         for (int i = 0; i < 3; i++) {
             incomeCards[i] = new JPanel(new GridLayout(2, 1));
@@ -151,8 +145,9 @@ public class DashboardPanel extends JPanel {
             monthlyIncomeLabel.setText("Error");
         }
     }
-    
-    public void refresh() { //called outside on switch
+
+    // called from MainPanel when navigating to dashboard
+    public void refresh() {
         loadIncomeData();
         loadStockAlerts();
     }
@@ -160,6 +155,7 @@ public class DashboardPanel extends JPanel {
     // ─────────────────────────────────────────
     // BOTTOM SECTION
     // ─────────────────────────────────────────
+
     private JPanel buildBottomSection() {
         alertsSection = buildAlertsSection();
         chatSection   = buildChatSection();
@@ -180,17 +176,18 @@ public class DashboardPanel extends JPanel {
     // ─────────────────────────────────────────
     // ALERTS SECTION
     // ─────────────────────────────────────────
+
     private JPanel buildAlertsSection() {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(ThemeManager.getBg());
 
-        alertsTitleLabel = UIUtils.createLabel("Stock Alerts", ThemeManager.FONT_SUBHEADING, ThemeManager.getText());
+        alertsTitleLabel = UIUtils.createLabel("Alerts", ThemeManager.FONT_SUBHEADING, ThemeManager.getText());
 
         alertsListPanel = new JPanel();
         alertsListPanel.setLayout(new BoxLayout(alertsListPanel, BoxLayout.Y_AXIS));
         alertsListPanel.setBackground(ThemeManager.getSurface());
 
-        noAlertsLabel = UIUtils.createLabel("No stock alerts.", ThemeManager.FONT_REGULAR, ThemeManager.getSubtext());
+        noAlertsLabel = UIUtils.createLabel("No alerts.", ThemeManager.FONT_REGULAR, ThemeManager.getSubtext());
         noAlertsLabel.setBorder(UIUtils.paddingBorder(12, 12, 12, 12));
         noAlertsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -206,52 +203,78 @@ public class DashboardPanel extends JPanel {
 
     private void loadStockAlerts() {
         alertsListPanel.removeAll();
+        boolean hasAlerts = false;
+
         try {
-            List<Product> alerts = inventoryService.getStockAlerts();
-            if (alerts.isEmpty()) {
-                alertsListPanel.add(noAlertsLabel);
-            } else {
-                for (Product p : alerts) {
-                    alertsListPanel.add(buildAlertRow(p));
-                    alertsListPanel.add(UIUtils.createSeparator());
-                }
+            // stock alerts — out of stock and low stock
+            List<Product> stockAlerts = inventoryService.getStockAlerts();
+            for (Product p : stockAlerts) {
+                String issue = p.isOutOfStock() ? "Out of stock" : "Low stock";
+                Color color  = p.isOutOfStock() ? ThemeManager.DANGER : ThemeManager.WARNING;
+                alertsListPanel.add(buildAlertRow(p, issue, color));
+                alertsListPanel.add(UIUtils.createSeparator());
+                hasAlerts = true;
             }
         } catch (SQLException e) {
-            alertsListPanel.add(UIUtils.createLabel(
-                "Failed to load alerts.", ThemeManager.FONT_SMALL, ThemeManager.DANGER
-            ));
+            alertsListPanel.add(buildErrorRow("Failed to load stock alerts."));
+            hasAlerts = true;
         }
+
+        try {
+            // expiration alerts — expired and expiring soon
+            // a product can appear here AND in stock alerts above (intentional)
+            List<Product> expAlerts = inventoryService.getExpirationAlerts();
+            for (Product p : expAlerts) {
+                String issue = p.isExpired() ? "Expired" : "Expiring soon";
+                Color color  = p.isExpired() ? ThemeManager.DANGER : ThemeManager.WARNING;
+                alertsListPanel.add(buildAlertRow(p, issue, color));
+                alertsListPanel.add(UIUtils.createSeparator());
+                hasAlerts = true;
+            }
+        } catch (SQLException e) {
+            alertsListPanel.add(buildErrorRow("Failed to load expiration alerts."));
+            hasAlerts = true;
+        }
+
+        if (!hasAlerts) {
+            alertsListPanel.add(noAlertsLabel);
+        }
+
         alertsListPanel.revalidate();
         alertsListPanel.repaint();
     }
 
-    private JPanel buildAlertRow(Product product) {
+    private JPanel buildAlertRow(Product product, String issue, Color issueColor) {
         JPanel row = new JPanel(new BorderLayout(8, 0));
         row.setBackground(ThemeManager.getSurface());
         row.setBorder(UIUtils.paddingBorder(8, 12, 8, 12));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        boolean outOfStock = product.isOutOfStock();
-        Color alertColor   = outOfStock ? ThemeManager.DANGER : ThemeManager.WARNING;
-        String alertText   = outOfStock ? "Out of stock" : "Low stock";
-
-        JLabel nameLabel   = UIUtils.createLabel(
+        JLabel nameLabel  = UIUtils.createLabel(
             "#" + product.getId() + " — " + product.getName(),
             ThemeManager.FONT_REGULAR, ThemeManager.getText()
         );
-        JLabel statusLabel = UIUtils.createLabel(alertText, ThemeManager.FONT_SMALL, alertColor);
-        statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        JLabel issueLabel = UIUtils.createLabel(issue, ThemeManager.FONT_SMALL, issueColor);
+        issueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
         row.add(nameLabel, BorderLayout.CENTER);
-        row.add(statusLabel, BorderLayout.EAST);
+        row.add(issueLabel, BorderLayout.EAST);
 
         return row;
+    }
+
+    private JLabel buildErrorRow(String message) {
+        JLabel label = UIUtils.createLabel(message, ThemeManager.FONT_SMALL, ThemeManager.DANGER);
+        label.setBorder(UIUtils.paddingBorder(8, 12, 8, 12));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
     }
 
     // ─────────────────────────────────────────
     // CHAT SECTION
     // ─────────────────────────────────────────
+
     private JPanel buildChatSection() {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(ThemeManager.getBg());
@@ -324,9 +347,11 @@ public class DashboardPanel extends JPanel {
             List<Product> products = inventoryService.getAllProducts("");
             context.append("Current Inventory:\n");
             for (Product p : products) {
-                context.append(String.format("- %s (ID:%d) | Stock: %s %s | Status: %s | Category: %s | For: %s%n",
+                context.append(String.format(
+                    "- %s (ID:%d) | Stock: %s %s | Status: %s | Category: %s | For: %s | Expires: %s%n",
                     p.getName(), p.getId(), p.getStockQuantity().toPlainString(),
-                    p.getUnit(), p.getStatus(), p.getCategory(), p.getIntendedFor()
+                    p.getUnit(), p.getStatus(), p.getCategory(), p.getIntendedFor(),
+                    p.getExpirationDate() != null ? p.getExpirationDate().toString() : "N/A"
                 ));
             }
         } catch (SQLException e) {
@@ -392,18 +417,16 @@ public class DashboardPanel extends JPanel {
     // ─────────────────────────────────────────
     // THEME
     // ─────────────────────────────────────────
+
     public void applyTheme() {
-        // main panels
         setBackground(ThemeManager.getBg());
         topSection.setBackground(ThemeManager.getBg());
         headerPanel.setBackground(ThemeManager.getBg());
         bottomWrapper.setBackground(ThemeManager.getBg());
         splitPane.setBackground(ThemeManager.getBg());
 
-        // title
         titleLabel.setForeground(ThemeManager.getText());
 
-        // income cards
         incomeCardsPanel.setBackground(ThemeManager.getBg());
         for (int i = 0; i < 3; i++) {
             incomeCards[i].setBackground(ThemeManager.getSurface());
@@ -414,7 +437,6 @@ public class DashboardPanel extends JPanel {
             incomePeriodLabels[i].setForeground(ThemeManager.getSubtext());
         }
 
-        // alerts section
         alertsSection.setBackground(ThemeManager.getBg());
         alertsTitleLabel.setForeground(ThemeManager.getText());
         alertsListPanel.setBackground(ThemeManager.getSurface());
@@ -422,7 +444,6 @@ public class DashboardPanel extends JPanel {
         alertsScroll.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorder(), 1));
         noAlertsLabel.setForeground(ThemeManager.getSubtext());
 
-        // chat section
         chatSection.setBackground(ThemeManager.getBg());
         chatTitleLabel.setForeground(ThemeManager.getText());
         chatHistoryPanel.setBackground(ThemeManager.getSurface());
@@ -437,7 +458,6 @@ public class DashboardPanel extends JPanel {
             BorderFactory.createEmptyBorder(6, 10, 6, 10)
         ));
 
-        // reload data
         loadIncomeData();
         loadStockAlerts();
 

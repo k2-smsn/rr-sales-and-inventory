@@ -1,17 +1,10 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package service;
 
-/**
- *
- * @author k2
- */
 import dao.ProductDAO;
 import entity.Product;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +19,7 @@ public class InventoryService {
         return instance;
     }
 
+    // used by NewTransactionPanel — excludes unavailable products
     public List<Product> searchProducts(String query) throws SQLException {
         String lower = query.toLowerCase().trim();
         return productDAO.getAll().stream()
@@ -42,6 +36,7 @@ public class InventoryService {
             .collect(Collectors.toList());
     }
 
+    // used by InventoryPanel — includes all products
     public List<Product> getAllProducts(String query) throws SQLException {
         String lower = query.toLowerCase().trim();
         return productDAO.getAll().stream()
@@ -50,22 +45,13 @@ public class InventoryService {
             .collect(Collectors.toList());
     }
 
-    public void adjustStock(Product product, BigDecimal amount, String operation) throws SQLException, IllegalArgumentException {
-        BigDecimal current = product.getStockQuantity();
-        BigDecimal newStock;
-
-        if (operation.equals("add")) {
-            newStock = current.add(amount);
-        } else {
-            newStock = current.subtract(amount);
-            if (newStock.compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException(
-                    "Cannot subtract " + amount + " from current stock of " + current + ". Stock cannot go negative."
-                );
-            }
-        }
-
-        productDAO.updateStock(product.getId(), newStock);
+    // replaces adjustStock — add only, with optional expiration date update
+    public void restockProduct(Product product, BigDecimal amount, LocalDate newExpirationDate) throws SQLException {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0)
+            throw new IllegalArgumentException("Restock amount must be greater than zero.");
+        if (product.isPieceUnit() && amount.stripTrailingZeros().scale() > 0)
+            throw new IllegalArgumentException("Piece unit cannot have decimal amounts.");
+        productDAO.restock(product.getId(), amount, newExpirationDate);
     }
 
     public void toggleAvailability(Product product) throws SQLException {
@@ -76,12 +62,24 @@ public class InventoryService {
     public void addProduct(Product product) throws SQLException {
         productDAO.add(product);
     }
-    
+
+    // returns products with stock at or below 7 (excludes unavailable)
     public List<Product> getStockAlerts() throws SQLException {
         return productDAO.getAll().stream()
             .filter(p -> !p.getStatus().equalsIgnoreCase("unavailable"))
             .filter(p -> p.getStockQuantity().compareTo(BigDecimal.valueOf(7)) <= 0)
             .sorted((a, b) -> a.getStockQuantity().compareTo(b.getStockQuantity()))
+            .collect(Collectors.toList());
+    }
+
+    // returns products that are expired or expiring within 14 days (excludes unavailable)
+    public List<Product> getExpirationAlerts() throws SQLException {
+        LocalDate today = LocalDate.now();
+        return productDAO.getAll().stream()
+            .filter(p -> !p.getStatus().equalsIgnoreCase("unavailable"))
+            .filter(p -> p.getExpirationDate() != null)
+            .filter(p -> p.isExpired() || p.isExpiringSoon())
+            .sorted((a, b) -> a.getExpirationDate().compareTo(b.getExpirationDate()))
             .collect(Collectors.toList());
     }
 }

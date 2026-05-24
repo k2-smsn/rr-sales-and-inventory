@@ -35,11 +35,12 @@ public class ThemeManager {
     public static final Color WARNING            = new Color(255, 193, 7);
 
     // — Fonts —
-    public static final Font FONT_REGULAR        = new Font("Segoe UI", Font.PLAIN, 13);
-    public static final Font FONT_BOLD           = new Font("Segoe UI", Font.BOLD, 13);
-    public static final Font FONT_SMALL          = new Font("Segoe UI", Font.PLAIN, 11);
-    public static final Font FONT_HEADING        = new Font("Segoe UI", Font.BOLD, 18);
-    public static final Font FONT_SUBHEADING     = new Font("Segoe UI", Font.BOLD, 15);
+    // — Fonts —
+    public static final Font FONT_REGULAR        = new Font("Segoe UI", Font.PLAIN, 15);
+    public static final Font FONT_BOLD           = new Font("Segoe UI", Font.BOLD, 15);
+    public static final Font FONT_SMALL          = new Font("Segoe UI", Font.PLAIN, 13);
+    public static final Font FONT_HEADING        = new Font("Segoe UI", Font.BOLD, 20);
+    public static final Font FONT_SUBHEADING     = new Font("Segoe UI", Font.BOLD, 17);
 
     private ThemeManager() {}
 

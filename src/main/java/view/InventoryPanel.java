@@ -45,9 +45,10 @@ public class InventoryPanel extends JPanel {
     private JLabel titleLabel;
 
     // fixed card dimensions
-    private static final int CARD_WIDTH  = 200;
-    private static final int CARD_HEIGHT = 280;
+    private static final int CARD_WIDTH  = 240;
+    private static final int CARD_HEIGHT = 310;
     private static final int CARDS_PER_ROW = 4;
+    private static final int CARD_GAP = 12;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -176,14 +177,15 @@ public class InventoryPanel extends JPanel {
         JPanel body = new JPanel(new BorderLayout());
         body.setBackground(ThemeManager.getBg());
 
-        // gridPanel uses FlowLayout so cards stay fixed size and wrap naturally
-        gridPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 12));
+        // fixed 4-column grid — wraps naturally as products are added
+        gridPanel = new JPanel(new GridLayout(0, CARDS_PER_ROW, CARD_GAP, CARD_GAP));
         gridPanel.setBackground(ThemeManager.getBg());
 
-        // gridWrapper centers the gridPanel horizontally
-        gridWrapper = new JPanel(new GridBagLayout());
+        // wrapper gives the grid padding inside the scroll pane
+        gridWrapper = new JPanel(new BorderLayout());
         gridWrapper.setBackground(ThemeManager.getBg());
-        gridWrapper.add(gridPanel);
+        gridWrapper.setBorder(BorderFactory.createEmptyBorder(CARD_GAP, CARD_GAP, CARD_GAP, CARD_GAP));
+        gridWrapper.add(gridPanel, BorderLayout.NORTH);
 
         gridScroll = UIUtils.createScrollPane(gridWrapper);
         gridScroll.setBorder(null);
@@ -246,11 +248,9 @@ public class InventoryPanel extends JPanel {
             BorderFactory.createLineBorder(ThemeManager.getBorder(), 1, true),
             UIUtils.paddingBorder(14, 14, 14, 14)
         ));
-
-        // fixed card size — does not adapt to content or window
         card.setPreferredSize(new Dimension(CARD_WIDTH, CARD_HEIGHT));
         card.setMinimumSize(new Dimension(CARD_WIDTH, CARD_HEIGHT));
-        card.setMaximumSize(new Dimension(CARD_WIDTH, CARD_HEIGHT));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, CARD_HEIGHT));
 
         // name + status badge row
         JPanel nameRow = new JPanel(new BorderLayout(4, 0));
@@ -292,7 +292,7 @@ public class InventoryPanel extends JPanel {
 
         // sales count
         JLabel salesLabel = UIUtils.createLabel(
-            "Sales: " + product.getSales(), ThemeManager.FONT_SMALL, ThemeManager.getSubtext()
+            "Sales: " + product.getSales(), ThemeManager.FONT_REGULAR, ThemeManager.getSubtext()
         );
         salesLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -328,7 +328,7 @@ public class InventoryPanel extends JPanel {
         card.add(expLabel);
         card.add(Box.createVerticalStrut(4));
         card.add(salesLabel);
-        card.add(Box.createVerticalGlue()); // pushes buttons to bottom of fixed card height
+        card.add(Box.createVerticalGlue());
         card.add(btnRow);
 
         return card;

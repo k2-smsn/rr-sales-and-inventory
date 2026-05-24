@@ -1,16 +1,9 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package view;
 
-/**
- *
- * @author k2
- */
 import javax.swing.*;
 import java.awt.*;
 import utility.ThemeManager;
+import utility.UserSession;
 
 public class MainPanel extends JPanel {
 
@@ -22,12 +15,12 @@ public class MainPanel extends JPanel {
     private InventoryPanel inventoryPanel;
     private TransactionsPanel transactionsPanel;
     private ReportsPanel reportsPanel;
+    private AccountsPanel accountsPanel;
 
     public MainPanel() {
         setLayout(new BorderLayout());
         setBackground(ThemeManager.getBg());
 
-        // create sidebar FIRST before any panels
         sidebar = new SidebarPanel(this);
 
         dashboardPanel    = new DashboardPanel(this);
@@ -40,6 +33,12 @@ public class MainPanel extends JPanel {
         contentPanel.add(inventoryPanel,    "inventory");
         contentPanel.add(transactionsPanel, "transactions");
         contentPanel.add(reportsPanel,      "reports");
+
+        // accounts panel only instantiated and added for admins
+        if (UserSession.getInstance().isAdmin()) {
+            accountsPanel = new AccountsPanel();
+            contentPanel.add(accountsPanel, "accounts");
+        }
 
         add(sidebar, BorderLayout.WEST);
         add(contentPanel, BorderLayout.CENTER);
@@ -57,6 +56,9 @@ public class MainPanel extends JPanel {
         if (name.equals("dashboard")) {
             dashboardPanel.refresh();
         }
+        if (name.equals("accounts") && accountsPanel != null) {
+            accountsPanel.refresh();
+        }
         cardLayout.show(contentPanel, name);
     }
 
@@ -71,7 +73,7 @@ public class MainPanel extends JPanel {
         revalidate();
         repaint();
     }
-    
+
     public void applyTheme() {
         setBackground(ThemeManager.getBg());
         contentPanel.setBackground(ThemeManager.getBg());
@@ -80,6 +82,7 @@ public class MainPanel extends JPanel {
         inventoryPanel.applyTheme();
         transactionsPanel.applyTheme();
         reportsPanel.applyTheme();
+        if (accountsPanel != null) accountsPanel.applyTheme();
         repaint();
         revalidate();
     }

@@ -23,10 +23,7 @@ public class Main {
     private static JPanel contentPane;
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            // simulate admin login
-            UserSession.getInstance().login("admin");
-            
+        SwingUtilities.invokeLater(() -> { 
             frame = new JFrame("Animal Supply Shop");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1200, 750);

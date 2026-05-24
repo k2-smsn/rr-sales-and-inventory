@@ -32,7 +32,7 @@ public class ThemeManager {
     public static final Color DANGER             = new Color(220, 53, 69);
     public static final Color DANGER_HOVER       = new Color(190, 30, 45);
     public static final Color SUCCESS            = new Color(40, 167, 69);
-    public static final Color WARNING            = new Color(255, 193, 7);
+    public static final Color WARNING            = new Color(255, 140, 0);
 
     // — Fonts —
     // — Fonts —

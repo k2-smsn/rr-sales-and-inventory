@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package view;
 
-/**
- *
- * @author k2
- */
 import com.mycompany.rrsalesandinventory.Main;
 import javax.swing.*;
 import java.awt.*;
@@ -23,6 +15,7 @@ public class SidebarPanel extends JPanel {
     private JButton inventoryBtn;
     private JButton transactionsBtn;
     private JButton reportsBtn;
+    private JButton accountsBtn; // admin only
     private JButton themeBtn;
     private JButton logoutBtn;
     private JPanel navPanel;
@@ -36,11 +29,11 @@ public class SidebarPanel extends JPanel {
         setPreferredSize(new Dimension(200, 0));
         setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, ThemeManager.getBorder()));
 
-        // create buttons first before building panels
         dashboardBtn    = buildNavButton("Dashboard");
         inventoryBtn    = buildNavButton("Inventory");
         transactionsBtn = buildNavButton("Transactions");
         reportsBtn      = buildNavButton("Reports");
+        accountsBtn     = buildNavButton("Accounts");
         themeBtn        = buildNavButton(ThemeManager.isDarkMode() ? "Light Mode" : "Dark Mode");
         logoutBtn       = buildNavButton("Logout");
 
@@ -48,6 +41,7 @@ public class SidebarPanel extends JPanel {
         inventoryBtn.addActionListener(e    -> mainPanel.showPanel("inventory"));
         transactionsBtn.addActionListener(e -> mainPanel.showPanel("transactions"));
         reportsBtn.addActionListener(e      -> mainPanel.showPanel("reports"));
+        accountsBtn.addActionListener(e     -> mainPanel.showPanel("accounts"));
         themeBtn.addActionListener(e        -> onToggleTheme());
         logoutBtn.addActionListener(e       -> onLogout());
 
@@ -70,6 +64,11 @@ public class SidebarPanel extends JPanel {
         navPanel.add(inventoryBtn);
         navPanel.add(transactionsBtn);
         navPanel.add(reportsBtn);
+
+        // accounts nav only visible to admins
+        if (UserSession.getInstance().isAdmin()) {
+            navPanel.add(accountsBtn);
+        }
 
         return navPanel;
     }
@@ -144,7 +143,8 @@ public class SidebarPanel extends JPanel {
         appNameLabel.setForeground(ThemeManager.getText());
 
         for (JButton btn : new JButton[]{
-            dashboardBtn, inventoryBtn, transactionsBtn, reportsBtn, themeBtn, logoutBtn
+            dashboardBtn, inventoryBtn, transactionsBtn, reportsBtn,
+            accountsBtn, themeBtn, logoutBtn
         }) {
             btn.setBackground(ThemeManager.getSurface());
             btn.setForeground(ThemeManager.getText());

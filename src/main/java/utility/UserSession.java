@@ -1,17 +1,10 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package utility;
 
-/**
- *
- * @author k2
- */
+import entity.Account;
+
 public class UserSession {
     private static UserSession instance;
-    private String username;
-    private String role;
+    private Account account;
 
     private UserSession() {}
 
@@ -20,18 +13,12 @@ public class UserSession {
         return instance;
     }
 
-    public void login(String username) {
-        this.username = username;
-        this.role = username.equalsIgnoreCase("admin") ? "admin" : "staff";
-    }
+    public void login(Account account)  { this.account = account; }
+    public void logout()                { this.account = null; }
 
-    public void logout() {
-        this.username = null;
-        this.role = null;
-    }
-
-    public String getUsername() { return username; }
-    public String getRole() { return role; }
-    public boolean isAdmin() { return "admin".equals(role); }
-    public boolean isLoggedIn() { return username != null; }
+    public Account getAccount()         { return account; }
+    public String getUsername()         { return account != null ? account.getUsername() : null; }
+    public String getRole()             { return account != null ? account.getRole() : null; }
+    public boolean isAdmin()            { return account != null && account.isAdmin(); }
+    public boolean isLoggedIn()         { return account != null; }
 }

@@ -32,7 +32,6 @@ public class NewTransactionPanel extends JPanel {
 
     private final List<CartItem> cart = new ArrayList<>();
     private List<Product> allProducts = new ArrayList<>();
-    //private final List<Product> searchResults = new ArrayList<>();
 
     // — Search section
     private JTextField searchField;
@@ -88,10 +87,6 @@ public class NewTransactionPanel extends JPanel {
     // SEARCH SECTION
     // ─────────────────────────────────────────
     private JPanel buildSearchSection() {
-        JPanel panel = new JPanel(new BorderLayout(0, 10));
-        panel.setBackground(ThemeManager.getBg());
-
-        // search field
         searchField = UIUtils.createTextField("Search products...");
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -102,7 +97,6 @@ public class NewTransactionPanel extends JPanel {
             public void changedUpdate(DocumentEvent e) { onSearch(); }
         });
 
-        // results container
         searchResultsPanel = new JPanel();
         searchResultsPanel.setLayout(new BoxLayout(searchResultsPanel, BoxLayout.Y_AXIS));
         searchResultsPanel.setBackground(ThemeManager.getSurface());
@@ -113,19 +107,14 @@ public class NewTransactionPanel extends JPanel {
 
         JLabel searchTitle = UIUtils.createLabel("Products", ThemeManager.FONT_SUBHEADING, ThemeManager.getText());
 
-        panel.add(searchTitle, BorderLayout.NORTH);
-        panel.add(searchField, BorderLayout.CENTER);  // wait, see note below
-        panel.add(scroll, BorderLayout.SOUTH);
-
-        // fix layout — stack title, field, results vertically
-        JPanel wrapper = new JPanel(new BorderLayout(0, 10));
-        wrapper.setBackground(ThemeManager.getBg());
-
+        // title + search field stacked above the scrollable results
         JPanel topPart = new JPanel(new BorderLayout(0, 8));
         topPart.setBackground(ThemeManager.getBg());
         topPart.add(searchTitle, BorderLayout.NORTH);
         topPart.add(searchField, BorderLayout.CENTER);
 
+        JPanel wrapper = new JPanel(new BorderLayout(0, 10));
+        wrapper.setBackground(ThemeManager.getBg());
         wrapper.add(topPart, BorderLayout.NORTH);
         wrapper.add(scroll, BorderLayout.CENTER);
 

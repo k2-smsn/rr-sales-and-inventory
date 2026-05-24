@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package service;
 
-/**
- *
- * @author k2
- */
 import dao.ItemSoldDAO;
 import dao.ProductDAO;
 import dao.TransactionDAO;
@@ -22,12 +14,13 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import utility.DBConnection;
+import utility.UserSession;
 
 public class SalesService {
     private static SalesService instance;
-    private final ProductDAO productDAO = ProductDAO.getInstance();
+    private final ProductDAO productDAO         = ProductDAO.getInstance();
     private final TransactionDAO transactionDAO = TransactionDAO.getInstance();
-    private final ItemSoldDAO itemSoldDAO = ItemSoldDAO.getInstance();
+    private final ItemSoldDAO itemSoldDAO       = ItemSoldDAO.getInstance();
 
     private SalesService() {}
 
@@ -40,7 +33,8 @@ public class SalesService {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Transaction transaction = new Transaction(0, LocalDate.now(), "active");
+                int userId = UserSession.getInstance().getAccount().getId();
+                Transaction transaction = new Transaction(0, LocalDate.now(), "active", userId);
                 int transactionId = transactionDAO.create(transaction, conn);
                 transaction.setId(transactionId);
 

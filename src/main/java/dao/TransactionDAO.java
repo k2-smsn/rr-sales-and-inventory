@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package dao;
 
-/**
- *
- * @author k2
- */
 import entity.Transaction;
 import java.sql.*;
 import java.time.LocalDate;
@@ -29,7 +21,8 @@ public class TransactionDAO {
         return new Transaction(
             rs.getInt("id"),
             rs.getDate("created_at").toLocalDate(),
-            rs.getString("status")
+            rs.getString("status"),
+            rs.getInt("processed_by")
         );
     }
 
@@ -48,10 +41,11 @@ public class TransactionDAO {
     }
 
     public int create(Transaction transaction, Connection conn) throws SQLException {
-        String sql = "INSERT INTO transactions (created_at, status) VALUES (?, ?) RETURNING id";
+        String sql = "INSERT INTO transactions (created_at, status, processed_by) VALUES (?, ?, ?) RETURNING id";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(transaction.getCreatedAt()));
             stmt.setString(2, transaction.getStatus());
+            stmt.setInt(3, transaction.getProcessedBy());
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) return rs.getInt("id");
             }
@@ -68,7 +62,7 @@ public class TransactionDAO {
             stmt.executeUpdate();
         }
     }
-    
+
     public void updateStatus(int transactionId, Connection conn) throws SQLException {
         String sql = "UPDATE transactions SET status = 'void' WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {

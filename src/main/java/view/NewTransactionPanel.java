@@ -513,7 +513,7 @@ public class NewTransactionPanel extends JPanel {
             return;
         }
 
-        // build summary
+        // build order summary for confirmation
         StringBuilder summary = new StringBuilder("Order Summary:\n\n");
         for (CartItem item : cart) {
             summary.append(String.format("%-20s x%-6s ₱%,.2f%n",
@@ -528,11 +528,8 @@ public class NewTransactionPanel extends JPanel {
         summary.append(String.format("%nTotal: ₱%,.2f", total));
 
         int choice = JOptionPane.showConfirmDialog(
-            this,
-            summary.toString(),
-            "Confirm Transaction",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.PLAIN_MESSAGE
+            this, summary.toString(), "Confirm Transaction",
+            JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE
         );
 
         if (choice == JOptionPane.YES_OPTION) {
@@ -541,17 +538,86 @@ public class NewTransactionPanel extends JPanel {
                 cart.clear();
                 updateCart();
                 searchField.setText("");
-                JOptionPane.showMessageDialog(
-                    this,
-                    "Transaction #" + receipt.getTransaction().getId() + " completed successfully!\nTotal: ₱" + String.format("%,.2f", receipt.getTotal()),
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE
-                );
+                showReceiptDialog(receipt);
                 navigateToDashboard();
             } catch (SQLException e) {
                 showError("Transaction failed: " + e.getMessage());
             }
         }
+    }
+
+    private void showReceiptDialog(Receipt receipt) {
+        String username  = utility.UserSession.getInstance().getUsername();
+        int WIDTH        = 40; // total receipt width in chars
+        String SEP       = "-".repeat(WIDTH);
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(center("R&R Animal Supply Shop", WIDTH)).append("\n");
+        sb.append(center("Your Trusted Pet Supply Store", WIDTH)).append("\n");
+        sb.append(SEP).append("\n");
+        sb.append(String.format("Receipt #: %d%n",   receipt.getTransaction().getId()));
+        sb.append(String.format("Date     : %s%n",   receipt.getTransaction().getCreatedAt()));
+        sb.append(String.format("Cashier  : %s%n",   username));
+        sb.append(SEP).append("\n");
+        sb.append(String.format("%-22s %5s %10s%n",  "Item", "Qty", "Amount"));
+        sb.append(SEP).append("\n");
+
+        for (entity.ItemSold item : receipt.getItemsSold()) {
+            String name = allProducts.stream()
+                .filter(p -> p.getId() == item.getProductId())
+                .map(entity.Product::getName)
+                .findFirst().orElse("Product #" + item.getProductId());
+            // format amount without peso sign to keep alignment, add it after
+            String amount = String.format("P%,.2f", item.getSubTotal());
+            sb.append(String.format("%-22s %5s %10s%n",
+                truncate(name, 22),
+                item.getQuantity().toPlainString(),
+                amount
+            ));
+        }
+
+        sb.append(SEP).append("\n");
+        sb.append(String.format("%-22s %16s%n", "TOTAL",
+            String.format("P%,.2f", receipt.getTotal())));
+        sb.append(SEP).append("\n");
+        sb.append("\n");
+        sb.append(center("Thank you for your purchase!", WIDTH)).append("\n");
+        sb.append(center("Please come again.  (^._.^)", WIDTH)).append("\n");
+
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Receipt", true);
+        dialog.setSize(380, 480);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JTextArea textArea = new JTextArea(sb.toString());
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        textArea.setEditable(false);
+        textArea.setBackground(Color.WHITE);
+        textArea.setForeground(Color.BLACK);
+        textArea.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+
+        JButton closeBtn = UIUtils.createAccentButton("Close");
+        closeBtn.addActionListener(e -> dialog.dispose());
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setBackground(ThemeManager.getBg());
+        bottom.add(closeBtn);
+
+        dialog.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        dialog.add(bottom, BorderLayout.SOUTH);
+        dialog.setVisible(true);
+    }
+
+    // centers text within a fixed width by padding with spaces
+    private String center(String text, int width) {
+        if (text.length() >= width) return text;
+        int pad = (width - text.length()) / 2;
+        return " ".repeat(pad) + text;
+    }
+
+    private String truncate(String s, int maxLen) {
+        return s.length() <= maxLen ? s : s.substring(0, maxLen - 1) + "…";
     }
 
     // ─────────────────────────────────────────

@@ -224,16 +224,31 @@ public class TransactionsPanel extends JPanel {
         JLabel dateLabel = UIUtils.createLabel(
             transaction.getCreatedAt().toString(), ThemeManager.FONT_SMALL, ThemeManager.getSubtext()
         );
+        // resolve username from account id; fall back gracefully if not found
+        String processedByName;
+        try {
+            entity.Account acc = service.AccountService.getInstance()
+                .getAllAccounts().stream()
+                .filter(a -> a.getId() == transaction.getProcessedBy())
+                .findFirst().orElse(null);
+            processedByName = acc != null ? acc.getUsername() : "Unknown";
+        } catch (java.sql.SQLException ex) {
+            processedByName = "Unknown";
+        }
+        JLabel processedByLabel = UIUtils.createLabel(
+            "By: " + processedByName, ThemeManager.FONT_SMALL, ThemeManager.getSubtext()
+        );
         JLabel statusLabel = UIUtils.createLabel(
             transaction.getStatus().toUpperCase(), ThemeManager.FONT_SMALL,
             transaction.getStatus().equalsIgnoreCase("void") ? ThemeManager.DANGER : ThemeManager.SUCCESS
         );
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
-        JPanel idDatePanel = new JPanel(new GridLayout(2, 1));
+        JPanel idDatePanel = new JPanel(new GridLayout(3, 1));
         idDatePanel.setBackground(ThemeManager.getSurface());
         idDatePanel.add(idLabel);
         idDatePanel.add(dateLabel);
+        idDatePanel.add(processedByLabel);
 
         topBar.add(idDatePanel, BorderLayout.WEST);
         topBar.add(statusLabel, BorderLayout.EAST);

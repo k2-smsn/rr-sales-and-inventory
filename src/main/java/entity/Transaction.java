@@ -1,34 +1,28 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package entity;
 
-/**
- *
- * @author k2
- */
 import java.time.LocalDate;
 
 public class Transaction {
     private int id;
     private LocalDate createdAt;
     private String status;
+    private int processedBy; // account id of the user who processed this
 
     public Transaction() {}
 
-    public Transaction(int id, LocalDate createdAt, String status) {
-        this.id = id;
-        this.createdAt = createdAt;
-        this.status = status;
+    public Transaction(int id, LocalDate createdAt, String status, int processedBy) {
+        this.id          = id;
+        this.createdAt   = createdAt;
+        this.status      = status;
+        this.processedBy = processedBy;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-
-    public LocalDate getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDate createdAt) { this.createdAt = createdAt; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public int getId()                          { return id; }
+    public void setId(int id)                   { this.id = id; }
+    public LocalDate getCreatedAt()             { return createdAt; }
+    public void setCreatedAt(LocalDate d)       { this.createdAt = d; }
+    public String getStatus()                   { return status; }
+    public void setStatus(String status)        { this.status = status; }
+    public int getProcessedBy()                 { return processedBy; }
+    public void setProcessedBy(int processedBy) { this.processedBy = processedBy; }
 }

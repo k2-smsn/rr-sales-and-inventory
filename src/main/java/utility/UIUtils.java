@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package utility;
 
-/**
- *
- * @author k2
- */
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -73,7 +65,40 @@ public class UIUtils {
     public static JButton createNeutralButton(String text) {
         return createButton(text, ThemeManager.getBorder(), ThemeManager.getText());
     }
-    
+
+    // small fixed-size button for icon/symbol labels like ✕ that would otherwise be clipped
+    public static JButton createIconButton(String symbol, Color bg, Color fg) {
+        JButton button = new JButton(symbol);
+        button.setFont(ThemeManager.FONT_BOLD);
+        button.setBackground(bg);
+        button.setForeground(fg);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        // no padding border — let the fixed size control dimensions instead
+        button.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        button.setPreferredSize(new Dimension(28, 28));
+        button.setMinimumSize(new Dimension(28, 28));
+        button.setMaximumSize(new Dimension(28, 28));
+        button.setHorizontalAlignment(SwingConstants.CENTER);
+
+        Color hoverColor = bg.darker();
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) { button.setBackground(hoverColor); }
+            @Override
+            public void mouseExited(MouseEvent e)  { button.setBackground(bg); }
+        });
+
+        return button;
+    }
+
+    // convenience — danger-colored icon button
+    public static JButton createDangerIconButton(String symbol) {
+        return createIconButton(symbol, ThemeManager.DANGER, Color.WHITE);
+    }
+
     public static JButton createFilterButton(String text) {
         JButton button = new JButton(text);
         button.setFont(ThemeManager.FONT_BOLD);
@@ -101,6 +126,17 @@ public class UIUtils {
         });
 
         return button;
+    }
+
+    // warning label with a fixed height so it never shifts surrounding components when text appears
+    public static JLabel createWarningLabel() {
+        JLabel label = new JLabel(" ");
+        label.setFont(ThemeManager.FONT_SMALL);
+        label.setForeground(ThemeManager.DANGER);
+        label.setPreferredSize(new Dimension(Integer.MAX_VALUE, 16));
+        label.setMinimumSize(new Dimension(0, 16));
+        label.setMaximumSize(new Dimension(Integer.MAX_VALUE, 16));
+        return label;
     }
 
     public static JPanel createCard() {
@@ -165,7 +201,7 @@ public class UIUtils {
         header.setReorderingAllowed(false);
         header.setResizingAllowed(true);
 
-        // default cell renderer for text columns
+        // default cell renderer — handles stock alert row coloring via !! and ! suffixes
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,

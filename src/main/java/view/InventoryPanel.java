@@ -1,13 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package view;
 
-/**
- *
- * @author k2
- */
 import entity.Product;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -19,6 +11,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import service.InventoryService;
+import service.ProductOptionService;
 import utility.ThemeManager;
 import utility.UIUtils;
 import utility.UserSession;
@@ -26,6 +19,7 @@ import utility.UserSession;
 public class InventoryPanel extends JPanel {
 
     private final InventoryService inventoryService = InventoryService.getInstance();
+    private final ProductOptionService optionService = ProductOptionService.getInstance();
     private List<Product> allProducts = new ArrayList<>();
 
     private JTextField searchField;
@@ -75,6 +69,7 @@ public class InventoryPanel extends JPanel {
     // ─────────────────────────────────────────
     // LOAD
     // ─────────────────────────────────────────
+
     private void loadProducts() {
         try {
             allProducts = inventoryService.getAllProducts("");
@@ -86,6 +81,7 @@ public class InventoryPanel extends JPanel {
     // ─────────────────────────────────────────
     // HEADER
     // ─────────────────────────────────────────
+
     private JPanel buildHeader() {
         headerPanel = new JPanel(new BorderLayout(0, 10));
         headerPanel.setBackground(ThemeManager.getBg());
@@ -109,6 +105,11 @@ public class InventoryPanel extends JPanel {
         rightPanel.add(searchField);
 
         if (UserSession.getInstance().isAdmin()) {
+            // manage options opens the options dialog; add product opens the add dialog
+            JButton manageOptionsBtn = UIUtils.createButton("Manage Options", ThemeManager.getBorder(), ThemeManager.getText());
+            manageOptionsBtn.addActionListener(e -> showManageOptionsDialog());
+            rightPanel.add(manageOptionsBtn);
+
             JButton addProductBtn = UIUtils.createAccentButton("+ Add Product");
             addProductBtn.addActionListener(e -> showAddProductDialog());
             rightPanel.add(addProductBtn);
@@ -162,6 +163,7 @@ public class InventoryPanel extends JPanel {
     // ─────────────────────────────────────────
     // BODY
     // ─────────────────────────────────────────
+
     private JPanel buildBody() {
         JPanel body = new JPanel(new BorderLayout());
         body.setBackground(ThemeManager.getBg());
@@ -179,8 +181,11 @@ public class InventoryPanel extends JPanel {
         table.setShowHorizontalLines(true);
         table.setFillsViewportHeight(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // applyTheme sets the default renderer which handles stock alert row coloring
         UIUtils.applyTheme(table);
 
+        // these column-specific renderers must come after applyTheme
         table.getColumnModel().getColumn(COL_STATUS).setCellRenderer(UIUtils.createStatusRenderer());
         table.getColumnModel().getColumn(COL_ACTIONS).setCellRenderer(new UIUtils.ButtonPanelRenderer());
         table.getColumnModel().getColumn(COL_ACTIONS).setCellEditor(new UIUtils.ButtonPanelEditor());
@@ -207,6 +212,7 @@ public class InventoryPanel extends JPanel {
     // ─────────────────────────────────────────
     // RENDER
     // ─────────────────────────────────────────
+
     private void renderCurrentSearch() {
         String query = searchField != null ? searchField.getText().trim().toLowerCase() : "";
 
@@ -230,6 +236,8 @@ public class InventoryPanel extends JPanel {
         tableModel.setRowCount(0);
         for (Product product : products) {
             BigDecimal stock = product.getStockQuantity();
+
+            // append !! for out of stock, ! for low stock — used by row renderer for coloring
             String stockDisplay;
             if (stock.compareTo(BigDecimal.ZERO) <= 0) {
                 stockDisplay = stock.toPlainString() + "  !!";
@@ -277,8 +285,148 @@ public class InventoryPanel extends JPanel {
     }
 
     // ─────────────────────────────────────────
+    // MANAGE OPTIONS DIALOG
+    // ─────────────────────────────────────────
+
+    private void showManageOptionsDialog() {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Manage Product Options", true);
+        dialog.setSize(560, 420);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel content = new JPanel(new GridLayout(1, 2, 16, 0));
+        content.setBackground(ThemeManager.getSurface());
+        content.setBorder(UIUtils.paddingBorder(20, 20, 20, 20));
+
+        content.add(buildOptionSection(dialog, "Intended For", "intended_for"));
+        content.add(buildOptionSection(dialog, "Category", "category"));
+
+        dialog.add(content);
+        dialog.setVisible(true);
+    }
+
+    // builds one column (Intended For or Category) inside the manage options dialog
+    private JPanel buildOptionSection(JDialog dialog, String title, String type) {
+        JPanel section = new JPanel(new BorderLayout(0, 10));
+        section.setBackground(ThemeManager.getSurface());
+
+        JLabel titleLabel = UIUtils.createLabel(title, ThemeManager.FONT_BOLD, ThemeManager.getText());
+
+        // scrollable list of current options
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setBackground(ThemeManager.getSurface());
+
+        JScrollPane scrollPane = new JScrollPane(listPanel);
+        scrollPane.setBorder(BorderFactory.createLineBorder(ThemeManager.getBorder()));
+        scrollPane.getViewport().setBackground(ThemeManager.getSurface());
+
+        JTextField inputField = UIUtils.createTextField("Add new...");
+        inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+
+        // fixed-height warning label so layout never shifts when text appears
+        JLabel warningLabel = UIUtils.createWarningLabel();
+
+        JButton addBtn = UIUtils.createAccentButton("Add");
+
+        // reloads the list panel from DB — used after add or delete
+        Runnable reloadList = () -> reloadOptionList(listPanel, type, dialog);
+
+        addBtn.addActionListener(e -> {
+            String val = inputField.getText().trim();
+            if (val.isEmpty()) { warningLabel.setText("Cannot be empty."); return; }
+
+            // confirm before adding
+            int confirm = JOptionPane.showConfirmDialog(
+                dialog,
+                "Add \"" + val + "\" to " + title + "?",
+                "Confirm Add",
+                JOptionPane.YES_NO_OPTION
+            );
+            if (confirm != JOptionPane.YES_OPTION) return;
+
+            try {
+                optionService.addOption(type, val);
+                inputField.setText("");
+                warningLabel.setText(" ");
+                reloadList.run();
+            } catch (IllegalArgumentException ex) {
+                warningLabel.setText(ex.getMessage());
+            } catch (SQLException ex) {
+                // 23505 = PostgreSQL unique violation
+                if (ex.getMessage().contains("duplicate key") || ex.getSQLState().equals("23505")) {
+                    warningLabel.setText("\"" + val + "\" already exists.");
+                } else {
+                    showError("Failed to add option: " + ex.getMessage());
+                }
+            }
+        });
+
+        reloadList.run();
+
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        bottomPanel.setBackground(ThemeManager.getSurface());
+        bottomPanel.add(inputField);
+        bottomPanel.add(Box.createVerticalStrut(4));
+        bottomPanel.add(warningLabel);
+        bottomPanel.add(Box.createVerticalStrut(4));
+        bottomPanel.add(addBtn);
+
+        section.add(titleLabel, BorderLayout.NORTH);
+        section.add(scrollPane, BorderLayout.CENTER);
+        section.add(bottomPanel, BorderLayout.SOUTH);
+
+        return section;
+    }
+
+    // reloads and repaints the list panel for a given option type
+    private void reloadOptionList(JPanel listPanel, String type, JDialog dialog) {
+        listPanel.removeAll();
+        try {
+            List<String> options = optionService.getByType(type);
+            for (String val : options) {
+                JPanel row = new JPanel(new BorderLayout());
+                row.setBackground(ThemeManager.getSurface());
+                row.setBorder(UIUtils.paddingBorder(4, 8, 4, 8));
+                row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+
+                JLabel valLabel = UIUtils.createLabel(val, ThemeManager.FONT_REGULAR, ThemeManager.getText());
+
+                // createDangerIconButton uses fixed sizing so ✕ is never clipped
+                JButton deleteBtn = UIUtils.createDangerIconButton("✕");
+
+                deleteBtn.addActionListener(e -> {
+                    int confirm = JOptionPane.showConfirmDialog(
+                        dialog,
+                        "Delete \"" + val + "\" from " + type + "?",
+                        "Confirm Delete",
+                        JOptionPane.YES_NO_OPTION
+                    );
+                    if (confirm != JOptionPane.YES_OPTION) return;
+                    try {
+                        optionService.deleteOption(type, val);
+                        reloadOptionList(listPanel, type, dialog);
+                    } catch (SQLException ex) {
+                        showError("Failed to delete option: " + ex.getMessage());
+                    }
+                });
+
+                row.add(valLabel, BorderLayout.CENTER);
+                row.add(deleteBtn, BorderLayout.EAST);
+                listPanel.add(row);
+            }
+        } catch (SQLException ex) {
+            showError("Failed to load options: " + ex.getMessage());
+        }
+        listPanel.revalidate();
+        listPanel.repaint();
+    }
+
+    // ─────────────────────────────────────────
     // ADJUST STOCK DIALOG
     // ─────────────────────────────────────────
+
     private void showAdjustStockDialog(Product product) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Adjust Stock", true);
         dialog.setSize(340, 260);
@@ -366,7 +514,19 @@ public class InventoryPanel extends JPanel {
     // ─────────────────────────────────────────
     // ADD PRODUCT DIALOG
     // ─────────────────────────────────────────
+
     private void showAddProductDialog() {
+        // load combo box options from DB before opening dialog
+        String[] intendedForOptions;
+        String[] categoryOptions;
+        try {
+            intendedForOptions = optionService.getIntendedForOptions().toArray(new String[0]);
+            categoryOptions    = optionService.getCategoryOptions().toArray(new String[0]);
+        } catch (SQLException e) {
+            showError("Failed to load product options: " + e.getMessage());
+            return;
+        }
+
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add New Product", true);
         dialog.setSize(400, 500);
         dialog.setLocationRelativeTo(this);
@@ -384,7 +544,7 @@ public class InventoryPanel extends JPanel {
         nameField.setAlignmentX(Component.LEFT_ALIGNMENT);
         nameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
 
-        JComboBox<String> unitBox = new JComboBox<>(new String[]{ "piece", "kg", "L" });
+        JComboBox<String> unitBox = new JComboBox<>(new String[]{ "piece", "kg", "L", "g", "mg", "mL" });
         unitBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         unitBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         unitBox.setFont(ThemeManager.FONT_REGULAR);
@@ -397,16 +557,13 @@ public class InventoryPanel extends JPanel {
         stockField.setAlignmentX(Component.LEFT_ALIGNMENT);
         stockField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
 
-        JComboBox<String> intendedForBox = new JComboBox<>(new String[]{
-            "chicken", "pigeon", "duck", "dog", "cat", "cow", "carabao"
-        });
+        // populated from DB via ProductOptionService
+        JComboBox<String> intendedForBox = new JComboBox<>(intendedForOptions);
         intendedForBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         intendedForBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         intendedForBox.setFont(ThemeManager.FONT_REGULAR);
 
-        JComboBox<String> categoryBox = new JComboBox<>(new String[]{
-            "food", "medicine", "general", "accessories"
-        });
+        JComboBox<String> categoryBox = new JComboBox<>(categoryOptions);
         categoryBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         categoryBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         categoryBox.setFont(ThemeManager.FONT_REGULAR);
@@ -417,12 +574,12 @@ public class InventoryPanel extends JPanel {
         JButton saveBtn = UIUtils.createAccentButton("Add Product");
         saveBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         saveBtn.addActionListener(e -> {
-            String name       = nameField.getText().trim();
-            String unit       = (String) unitBox.getSelectedItem();
-            String priceRaw   = priceField.getText().trim();
-            String stockRaw   = stockField.getText().trim();
+            String name        = nameField.getText().trim();
+            String unit        = (String) unitBox.getSelectedItem();
+            String priceRaw    = priceField.getText().trim();
+            String stockRaw    = stockField.getText().trim();
             String intendedFor = (String) intendedForBox.getSelectedItem();
-            String category   = (String) categoryBox.getSelectedItem();
+            String category    = (String) categoryBox.getSelectedItem();
 
             if (name.isEmpty()) { warningLabel.setText("Product name is required."); return; }
 
@@ -438,6 +595,7 @@ public class InventoryPanel extends JPanel {
             try {
                 stock = new BigDecimal(stockRaw);
                 if (stock.compareTo(BigDecimal.ZERO) < 0) throw new NumberFormatException();
+                // piece is the only whole-unit type; kg, L, g, mg, mL all allow decimals
                 if (unit.equals("piece") && stock.stripTrailingZeros().scale() > 0) {
                     warningLabel.setText("Stock for piece unit cannot have decimals."); return;
                 }
@@ -494,6 +652,7 @@ public class InventoryPanel extends JPanel {
     // ─────────────────────────────────────────
     // TOGGLE AVAILABILITY
     // ─────────────────────────────────────────
+
     private void onToggleAvailability(Product product) {
         String action = product.getStatus().equalsIgnoreCase("available")
             ? "mark as unavailable" : "mark as available";
@@ -518,6 +677,7 @@ public class InventoryPanel extends JPanel {
     // ─────────────────────────────────────────
     // HELPERS
     // ─────────────────────────────────────────
+
     private BigDecimal parseAmount(String raw, Product product, JLabel warningLabel) {
         if (raw.isEmpty()) { warningLabel.setText("Please enter an amount."); return null; }
         BigDecimal amount;
@@ -542,23 +702,26 @@ public class InventoryPanel extends JPanel {
         loadProducts();
         renderCurrentSearch();
     }
-    
-    public void refresh() { //called outide of class
+
+    // called from MainPanel when navigating to this panel
+    public void refresh() {
         loadProducts();
         renderCurrentSearch();
     }
 
+    // ─────────────────────────────────────────
+    // THEME
+    // ─────────────────────────────────────────
+
     public void applyTheme() {
         setBackground(ThemeManager.getBg());
 
-        // header panels
         headerPanel.setBackground(ThemeManager.getBg());
         topRow.setBackground(ThemeManager.getBg());
         rightPanel.setBackground(ThemeManager.getBg());
         filterRow.setBackground(ThemeManager.getBg());
         titleLabel.setForeground(ThemeManager.getText());
 
-        // search field
         searchField.setBackground(ThemeManager.getSurface());
         searchField.setForeground(ThemeManager.getText());
         searchField.setCaretColor(ThemeManager.getText());
@@ -567,13 +730,12 @@ public class InventoryPanel extends JPanel {
             BorderFactory.createEmptyBorder(6, 10, 6, 10)
         ));
 
-        // table
+        // re-apply theme and column-specific renderers after theme change
         UIUtils.applyTheme(table);
         table.getColumnModel().getColumn(COL_STATUS).setCellRenderer(UIUtils.createStatusRenderer());
         table.getColumnModel().getColumn(COL_ACTIONS).setCellRenderer(new UIUtils.ButtonPanelRenderer());
         table.getColumnModel().getColumn(COL_ACTIONS).setCellEditor(new UIUtils.ButtonPanelEditor());
 
-        // filter buttons
         updateFilterButtons();
         renderCurrentSearch();
 

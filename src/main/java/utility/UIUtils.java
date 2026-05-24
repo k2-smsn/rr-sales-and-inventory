@@ -171,14 +171,34 @@ public class UIUtils {
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setBackground(isSelected ? ThemeManager.ACCENT : ThemeManager.getSurface());
-                setForeground(isSelected ? Color.WHITE : ThemeManager.getText());
+
+                if (isSelected) {
+                    setBackground(ThemeManager.ACCENT);
+                    setForeground(Color.WHITE);
+                } else {
+                    // check stock column (index 4) for alert indicators
+                    int stockCol = 4;
+                    Object stockVal = null;
+                    try { stockVal = table.getValueAt(row, stockCol); } catch (Exception ignored) {}
+                    String stockStr = stockVal != null ? stockVal.toString() : "";
+
+                    if (stockStr.endsWith("!!")) {
+                        setBackground(new Color(255, 200, 200));
+                        setForeground(column == stockCol ? new Color(180, 0, 0) : ThemeManager.getText());
+                    } else if (stockStr.endsWith("!")) {
+                        setBackground(new Color(255, 243, 200));
+                        setForeground(column == stockCol ? new Color(160, 100, 0) : ThemeManager.getText());
+                    } else {
+                        setBackground(ThemeManager.getSurface());
+                        setForeground(ThemeManager.getText());
+                    }
+                }
+
                 setFont(ThemeManager.FONT_REGULAR);
                 setBorder(UIUtils.paddingBorder(0, 8, 0, 8));
                 return this;
             }
         };
-
         // apply default renderer to all columns
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);

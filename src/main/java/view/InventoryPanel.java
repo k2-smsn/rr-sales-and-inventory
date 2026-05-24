@@ -229,12 +229,22 @@ public class InventoryPanel extends JPanel {
     private void renderProducts(List<Product> products) {
         tableModel.setRowCount(0);
         for (Product product : products) {
+            BigDecimal stock = product.getStockQuantity();
+            String stockDisplay;
+            if (stock.compareTo(BigDecimal.ZERO) <= 0) {
+                stockDisplay = stock.toPlainString() + "  !!";
+            } else if (stock.compareTo(BigDecimal.valueOf(7)) <= 0) {
+                stockDisplay = stock.toPlainString() + "  !";
+            } else {
+                stockDisplay = stock.toPlainString();
+            }
+
             tableModel.addRow(new Object[]{
                 product.getId(),
                 product.getName(),
                 product.getUnit(),
                 String.format("₱%,.2f", product.getPricePerUnit()),
-                product.getStockQuantity().toPlainString(),
+                stockDisplay,
                 product.getIntendedFor(),
                 product.getCategory(),
                 product.getSales(),

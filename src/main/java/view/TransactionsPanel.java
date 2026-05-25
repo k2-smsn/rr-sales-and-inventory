@@ -31,6 +31,7 @@ public class TransactionsPanel extends JPanel {
 
     private JSpinner fromSpinner;
     private JSpinner toSpinner;
+    private JComboBox<String> statusFilter;
     private JPanel gridPanel;
     private JScrollPane gridScroll;
     private JPanel headerPanel;
@@ -91,6 +92,10 @@ public class TransactionsPanel extends JPanel {
         fromLabel = UIUtils.createLabel("From:", ThemeManager.FONT_REGULAR, ThemeManager.getText());
         toLabel   = UIUtils.createLabel("To:", ThemeManager.FONT_REGULAR, ThemeManager.getText());
 
+        statusFilter = new JComboBox<>(new String[]{ "All", "Active", "Void" });
+        statusFilter.setFont(ThemeManager.FONT_REGULAR);
+        statusFilter.setPreferredSize(new Dimension(100, 34));
+
         controlsPanel.add(fromLabel);
         controlsPanel.add(fromSpinner);
         controlsPanel.add(toLabel);
@@ -98,6 +103,7 @@ public class TransactionsPanel extends JPanel {
         controlsPanel.add(todayBtn);
         controlsPanel.add(weekBtn);
         controlsPanel.add(monthBtn);
+        controlsPanel.add(statusFilter);
         controlsPanel.add(filterBtn);
 
         headerPanel.add(titleLabel, BorderLayout.NORTH);
@@ -165,13 +171,21 @@ public class TransactionsPanel extends JPanel {
         }
 
         try {
+            String selectedStatus = (String) statusFilter.getSelectedItem();
             List<Transaction> transactions = transactionService.getTransactionsByDateRange(from, to);
-            renderTransactions(transactions);
+
+            List<Transaction> filtered = transactions.stream()
+                .filter(t -> selectedStatus.equals("All") ||
+                             t.getStatus().equalsIgnoreCase(selectedStatus))
+                .collect(java.util.stream.Collectors.toList());
+
+            renderTransactions(filtered);
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this,
                 "Failed to load transactions: " + e.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
+          
     }
 
     // ─────────────────────────────────────────

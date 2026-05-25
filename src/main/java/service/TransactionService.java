@@ -44,7 +44,7 @@ public class TransactionService {
         return productDAO.getById(productId);
     }
 
-   public void voidTransaction(int transactionId) throws SQLException {
+   public void voidTransaction(int transactionId, int voidedBy) throws SQLException {
         try (Connection conn = utility.DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -53,7 +53,7 @@ public class TransactionService {
                     productDAO.incrementStock(item.getProductId(), item.getQuantity(), conn);
                     productDAO.decrementSales(item.getProductId(), conn);
                 }
-                transactionDAO.updateStatus(transactionId, conn);
+                transactionDAO.updateStatus(transactionId, voidedBy, conn);
                 conn.commit();
             } catch (SQLException e) {
                 conn.rollback();

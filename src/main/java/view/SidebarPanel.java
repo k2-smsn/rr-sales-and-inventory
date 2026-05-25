@@ -63,10 +63,10 @@ public class SidebarPanel extends JPanel {
         navPanel.add(dashboardBtn);
         navPanel.add(inventoryBtn);
         navPanel.add(transactionsBtn);
-        navPanel.add(reportsBtn);
-
-        // accounts nav only visible to admins
+        
+        // reports and accounts nav only visible to admins
         if (UserSession.getInstance().isAdmin()) {
+            navPanel.add(reportsBtn);
             navPanel.add(accountsBtn);
         }
 

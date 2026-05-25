@@ -7,6 +7,7 @@ public class Transaction {
     private LocalDate createdAt;
     private String status;
     private int processedBy; // account id of the user who processed this
+    private Integer voidedBy; // account id of the user who voided this (null if not voided)
 
     public Transaction() {}
 
@@ -15,6 +16,7 @@ public class Transaction {
         this.createdAt   = createdAt;
         this.status      = status;
         this.processedBy = processedBy;
+        this.voidedBy    = null;
     }
 
     public int getId()                          { return id; }
@@ -25,4 +27,6 @@ public class Transaction {
     public void setStatus(String status)        { this.status = status; }
     public int getProcessedBy()                 { return processedBy; }
     public void setProcessedBy(int processedBy) { this.processedBy = processedBy; }
+    public Integer getVoidedBy()                { return voidedBy; }
+    public void setVoidedBy(Integer voidedBy)   { this.voidedBy = voidedBy; }
 }

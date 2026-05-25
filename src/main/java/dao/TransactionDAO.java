@@ -18,12 +18,15 @@ public class TransactionDAO {
     }
 
     private Transaction mapRow(ResultSet rs) throws SQLException {
-        return new Transaction(
+        Transaction t = new Transaction(
             rs.getInt("id"),
             rs.getDate("created_at").toLocalDate(),
             rs.getString("status"),
             rs.getInt("processed_by")
         );
+        int voidedBy = rs.getInt("voided_by");
+        t.setVoidedBy(rs.wasNull() ? null : voidedBy);
+        return t;
     }
 
     public List<Transaction> getByDateRange(LocalDate from, LocalDate to) throws SQLException {
@@ -53,11 +56,10 @@ public class TransactionDAO {
         throw new SQLException("Failed to create transaction, no ID returned.");
     }
 
-    public void updateStatus(int transactionId, String status) throws SQLException {
-        String sql = "UPDATE transactions SET status = ? WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, status);
+    public void updateStatus(int transactionId, int voidedBy, Connection conn) throws SQLException {
+        String sql = "UPDATE transactions SET status = 'void', voided_by = ? WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, voidedBy);
             stmt.setInt(2, transactionId);
             stmt.executeUpdate();
         }

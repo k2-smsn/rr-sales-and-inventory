@@ -244,11 +244,28 @@ public class TransactionsPanel extends JPanel {
         );
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
-        JPanel idDatePanel = new JPanel(new GridLayout(3, 1));
+        JPanel idDatePanel = new JPanel(new GridLayout(0, 1));
         idDatePanel.setBackground(ThemeManager.getSurface());
         idDatePanel.add(idLabel);
         idDatePanel.add(dateLabel);
         idDatePanel.add(processedByLabel);
+
+        if (transaction.getStatus().equalsIgnoreCase("void") && transaction.getVoidedBy() != null) {
+            String voidedByName;
+            try {
+                entity.Account acc = service.AccountService.getInstance()
+                    .getAllAccounts().stream()
+                    .filter(a -> a.getId() == transaction.getVoidedBy())
+                    .findFirst().orElse(null);
+                voidedByName = acc != null ? acc.getUsername() : "Unknown";
+            } catch (java.sql.SQLException ex) {
+                voidedByName = "Unknown";
+            }
+            JLabel voidedByLabel = UIUtils.createLabel(
+                "Voided by: " + voidedByName, ThemeManager.FONT_SMALL, ThemeManager.DANGER
+            );
+            idDatePanel.add(voidedByLabel);
+        }
 
         topBar.add(idDatePanel, BorderLayout.WEST);
         topBar.add(statusLabel, BorderLayout.EAST);
@@ -302,15 +319,7 @@ public class TransactionsPanel extends JPanel {
 
         if (transaction.getStatus().equalsIgnoreCase("active")) {
             JButton voidBtn = UIUtils.createDangerButton("Cancel Transaction");
-            voidBtn.addActionListener(e -> {
-                if (!UserSession.getInstance().isAdmin()) {
-                    JOptionPane.showMessageDialog(this,
-                        "This action requires admin access.",
-                        "Access Denied", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                onVoidTransaction(transaction);
-            });
+            voidBtn.addActionListener(e -> onVoidTransaction(transaction));
             bottomBar.add(voidBtn);
         }
 
@@ -352,7 +361,8 @@ public class TransactionsPanel extends JPanel {
         );
         if (choice == JOptionPane.YES_OPTION) {
             try {
-                transactionService.voidTransaction(transaction.getId());
+                int voidedBy = UserSession.getInstance().getAccountId();
+                transactionService.voidTransaction(transaction.getId(), voidedBy);
                 loadTransactions();
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this,

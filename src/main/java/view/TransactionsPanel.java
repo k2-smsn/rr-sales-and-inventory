@@ -14,6 +14,7 @@ import entity.Transaction;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -359,7 +360,7 @@ public class TransactionsPanel extends JPanel {
         row.setBackground(ThemeManager.getSurface());
         row.setBorder(UIUtils.paddingBorder(4, 4, 4, 4));
         row.add(UIUtils.createLabel(productName, ThemeManager.FONT_REGULAR, ThemeManager.getText()));
-        row.add(UIUtils.createLabel(item.getQuantity().toPlainString(), ThemeManager.FONT_REGULAR, ThemeManager.getText()));
+        row.add(UIUtils.createLabel(item.getQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString(), ThemeManager.FONT_REGULAR, ThemeManager.getText())); // 2 dp
         row.add(UIUtils.createLabel(String.format("₱%,.2f", item.getSubTotal()), ThemeManager.FONT_REGULAR, ThemeManager.getText()));
         return row;
     }

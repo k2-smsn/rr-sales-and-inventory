@@ -16,6 +16,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -311,14 +312,14 @@ public class NewTransactionPanel extends JPanel {
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel hint = UIUtils.createLabel(
-            "Stock available: " + item.getProduct().getStockQuantity() + " " + item.getProduct().getUnit(),
+            "Stock available: " + item.getProduct().getStockQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString() + " " + item.getProduct().getUnit(), // 2 dp
             ThemeManager.FONT_SMALL,
             ThemeManager.getSubtext()
         );
         hint.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JTextField inputField = UIUtils.createTextField("Enter quantity...");
-        inputField.setText(item.getQuantity().toPlainString());
+        inputField.setText(item.getQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString()); // 2 dp
         inputField.setAlignmentX(Component.LEFT_ALIGNMENT);
         inputField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
 
@@ -365,7 +366,7 @@ public class NewTransactionPanel extends JPanel {
             }
         }
         if (qty.compareTo(product.getStockQuantity()) > 0) {
-            return "Insufficient stock. Only " + product.getStockQuantity() + " " + product.getUnit() + " available.";
+            return "Insufficient stock. Only " + product.getStockQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString() + " " + product.getUnit() + " available."; // 2 dp
         }
         return null;
     }
@@ -447,7 +448,7 @@ public class NewTransactionPanel extends JPanel {
         JButton minusBtn = UIUtils.createNeutralButton("−");
         JButton plusBtn  = UIUtils.createAccentButton("+");
         JButton setBtn   = UIUtils.createNeutralButton("✎");
-        JLabel  qtyLabel = UIUtils.createLabel(item.getQuantity().toPlainString(), ThemeManager.FONT_BOLD, ThemeManager.getText());
+        JLabel  qtyLabel = UIUtils.createLabel(item.getQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString(), ThemeManager.FONT_BOLD, ThemeManager.getText()); // 2 dp
         qtyLabel.setPreferredSize(new Dimension(40, 20));
         qtyLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -518,7 +519,7 @@ public class NewTransactionPanel extends JPanel {
         for (CartItem item : cart) {
             summary.append(String.format("%-20s x%-6s ₱%,.2f%n",
                 item.getProduct().getName(),
-                item.getQuantity().toPlainString(),
+                item.getQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString(), // 2 dp
                 item.getSubTotal()
             ));
         }
@@ -572,7 +573,7 @@ public class NewTransactionPanel extends JPanel {
             String amount = String.format("P%,.2f", item.getSubTotal());
             sb.append(String.format("%-22s %5s %10s%n",
                 truncate(name, 22),
-                item.getQuantity().toPlainString(),
+                item.getQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString(), // 2 dp
                 amount
             ));
         }
@@ -635,4 +636,4 @@ public class NewTransactionPanel extends JPanel {
         mainPanel.showPanel("dashboard");
     }
     
-}    
+}

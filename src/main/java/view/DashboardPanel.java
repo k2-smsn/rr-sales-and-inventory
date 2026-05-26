@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -349,7 +350,7 @@ public class DashboardPanel extends JPanel {
             for (Product p : products) {
                 context.append(String.format(
                     "- %s (ID:%d) | Stock: %s %s | Status: %s | Category: %s | For: %s | Expires: %s%n",
-                    p.getName(), p.getId(), p.getStockQuantity().toPlainString(),
+                    p.getName(), p.getId(), p.getStockQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString(), // 2 dp
                     p.getUnit(), p.getStatus(), p.getCategory(), p.getIntendedFor(),
                     p.getExpirationDate() != null ? p.getExpirationDate().toString() : "N/A"
                 ));

@@ -6,6 +6,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -337,7 +338,7 @@ public class InventoryPanel extends JPanel {
     // builds stock text — !! out of stock, ! low stock
     private String buildStockText(Product product) {
         BigDecimal stock = product.getStockQuantity();
-        String base = "Stock: " + stock.toPlainString() + " " + product.getUnit();
+        String base = "Stock: " + stock.setScale(2, RoundingMode.HALF_UP).toPlainString() + " " + product.getUnit(); // 2 dp
         if (stock.compareTo(BigDecimal.ZERO) <= 0) return base + "  !!";
         if (stock.compareTo(BigDecimal.valueOf(7)) <= 0) return base + "  !";
         return base;
@@ -527,7 +528,7 @@ public class InventoryPanel extends JPanel {
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel currentLabel = UIUtils.createLabel(
-            "Current stock: " + product.getStockQuantity().toPlainString() + " " + product.getUnit(),
+            "Current stock: " + product.getStockQuantity().setScale(2, RoundingMode.HALF_UP).toPlainString() + " " + product.getUnit(), // 2 dp
             ThemeManager.FONT_SMALL, ThemeManager.getSubtext()
         );
         currentLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -609,7 +610,7 @@ public class InventoryPanel extends JPanel {
         }
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add New Product", true);
-        dialog.setSize(400, 560);
+        dialog.setSize(400, 620);
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
 
@@ -618,35 +619,38 @@ public class InventoryPanel extends JPanel {
         content.setBackground(ThemeManager.getSurface());
         content.setBorder(UIUtils.paddingBorder(20, 20, 20, 20));
 
+        // field width capped so they don't stretch across the full dialog
+        final Dimension FIELD_SIZE = new Dimension(360, 36);
+
         JLabel titleLabel = UIUtils.createLabel("Add New Product", ThemeManager.FONT_BOLD, ThemeManager.getText());
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JTextField nameField = UIUtils.createTextField("Product name");
         nameField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        nameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        nameField.setMaximumSize(FIELD_SIZE);
 
         JComboBox<String> unitBox = new JComboBox<>(new String[]{ "piece", "kg", "L", "g", "mg", "mL" });
         unitBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        unitBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        unitBox.setMaximumSize(FIELD_SIZE);
         unitBox.setFont(ThemeManager.FONT_REGULAR);
 
         JTextField priceField = UIUtils.createTextField("Price per unit");
         priceField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        priceField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        priceField.setMaximumSize(FIELD_SIZE);
 
         JTextField stockField = UIUtils.createTextField("Initial stock");
         stockField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        stockField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        stockField.setMaximumSize(FIELD_SIZE);
 
         // populated from DB via ProductOptionService
         JComboBox<String> intendedForBox = new JComboBox<>(intendedForOptions);
         intendedForBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        intendedForBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        intendedForBox.setMaximumSize(FIELD_SIZE);
         intendedForBox.setFont(ThemeManager.FONT_REGULAR);
 
         JComboBox<String> categoryBox = new JComboBox<>(categoryOptions);
         categoryBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        categoryBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        categoryBox.setMaximumSize(FIELD_SIZE);
         categoryBox.setFont(ThemeManager.FONT_REGULAR);
 
         // checkbox toggles the expiry date field
@@ -658,7 +662,7 @@ public class InventoryPanel extends JPanel {
 
         JTextField expiryField = UIUtils.createTextField("yyyy-MM-dd");
         expiryField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        expiryField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        expiryField.setMaximumSize(FIELD_SIZE);
         expiryField.setEnabled(false);
 
         hasExpiry.addActionListener(e -> expiryField.setEnabled(hasExpiry.isSelected()));
@@ -754,10 +758,7 @@ public class InventoryPanel extends JPanel {
         content.add(Box.createVerticalStrut(12));
         content.add(saveBtn);
 
-        JScrollPane scrollPane = new JScrollPane(content);
-        scrollPane.setBorder(null);
-        scrollPane.getViewport().setBackground(ThemeManager.getSurface());
-        dialog.add(scrollPane);
+        dialog.add(content);
         dialog.setVisible(true);
     }
 

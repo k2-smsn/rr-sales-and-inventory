@@ -17,6 +17,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.FileOutputStream;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -276,7 +277,7 @@ public class ReportsPanel extends JPanel {
                 rank++,
                 row.getProductName(),
                 row.getCategory(),
-                row.getTotalQuantitySold().toPlainString(),
+                row.getTotalQuantitySold().setScale(2, RoundingMode.HALF_UP).toPlainString(), // 2 dp
                 String.format("₱%,.2f", row.getTotalRevenue())
             });
         }
@@ -302,7 +303,7 @@ public class ReportsPanel extends JPanel {
             model.addRow(new Object[]{
                 row.getCategory(),
                 row.getIntendedFor(),
-                row.getTotalQuantitySold().toPlainString(),
+                row.getTotalQuantitySold().setScale(2, RoundingMode.HALF_UP).toPlainString(), // 2 dp
                 String.format("₱%,.2f", row.getTotalRevenue())
             });
         }
@@ -406,7 +407,7 @@ public class ReportsPanel extends JPanel {
             addPdfCell(table, String.valueOf(rank++), cellFont);
             addPdfCell(table, row.getProductName(), cellFont);
             addPdfCell(table, row.getCategory(), cellFont);
-            addPdfCell(table, row.getTotalQuantitySold().toPlainString(), cellFont);
+            addPdfCell(table, row.getTotalQuantitySold().setScale(2, RoundingMode.HALF_UP).toPlainString(), cellFont); // 2 dp
             addPdfCell(table, String.format("₱%,.2f", row.getTotalRevenue()), cellFont);
         }
 
@@ -429,7 +430,7 @@ public class ReportsPanel extends JPanel {
         for (SegmentData row : data) {
             addPdfCell(table, row.getCategory(), cellFont);
             addPdfCell(table, row.getIntendedFor(), cellFont);
-            addPdfCell(table, row.getTotalQuantitySold().toPlainString(), cellFont);
+            addPdfCell(table, row.getTotalQuantitySold().setScale(2, RoundingMode.HALF_UP).toPlainString(), cellFont); // 2 dp
             addPdfCell(table, String.format("₱%,.2f", row.getTotalRevenue()), cellFont);
         }
 
